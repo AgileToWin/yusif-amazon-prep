@@ -160,8 +160,24 @@ const state = {
   sessionLog: JSON.parse(localStorage.getItem('session_log') || '[]'),
   savedTakes: JSON.parse(localStorage.getItem('saved_takes') || '[]'),
   gamificationOn: localStorage.getItem('gamificationOn') !== 'false',
+  boastfulness: (() => {
+    const stored = localStorage.getItem('boastfulness');
+    if (stored === null) return 3; // default
+    if (stored === 'off') return null;
+    const n = parseInt(stored, 10);
+    return (n >= 0 && n <= 5) ? n : 3;
+  })(),
   intentLoaded: {},
   pendingTrimType: null,
+};
+
+const BOAST_LABELS = {
+  0: 'Quietly humble · facts only, no self-claim',
+  1: 'Reserved · sparing "I", numbers carry the story',
+  2: 'Standard · clear ownership, no self-praise',
+  3: 'Forward-leaning · active verbs, confident ownership (default)',
+  4: 'Assertive · strong claims of impact',
+  5: 'Bold declarative · maximum ownership, declarative excellence',
 };
 
 // ============= INIT =============
@@ -177,7 +193,34 @@ function init() {
   }
 
   applyGamificationMode();
+  applyBoastSetting();
   bindEvents();
+}
+
+function applyBoastSetting() {
+  const slider = document.getElementById('boast-slider');
+  const current = document.getElementById('boast-current');
+  if (!slider || !current) return;
+  if (state.boastfulness === null || state.boastfulness === undefined) {
+    current.classList.add('off');
+    current.innerHTML = '<strong>Off</strong> · the coach picks the tone (no boastfulness instruction sent)';
+  } else {
+    slider.value = state.boastfulness;
+    current.classList.remove('off');
+    const parts = (BOAST_LABELS[state.boastfulness] || '').split(' · ');
+    current.innerHTML = `<strong>${state.boastfulness}</strong> · ${parts.join(' · ')}`;
+  }
+}
+
+function setBoastfulness(value) {
+  if (value === null) {
+    state.boastfulness = null;
+    localStorage.setItem('boastfulness', 'off');
+  } else {
+    state.boastfulness = value;
+    localStorage.setItem('boastfulness', String(value));
+  }
+  applyBoastSetting();
 }
 
 function applyGamificationMode() {
@@ -242,6 +285,21 @@ function bindEvents() {
   document.querySelectorAll('.mode-control button').forEach(b => {
     b.addEventListener('click', () => setGamification(b.dataset.mode === 'training'));
   });
+
+  // Boastfulness slider + off button
+  const boastSlider = document.getElementById('boast-slider');
+  if (boastSlider) {
+    boastSlider.addEventListener('input', (e) => setBoastfulness(parseInt(e.target.value, 10)));
+  }
+  const boastOff = document.getElementById('boast-off-btn');
+  if (boastOff) {
+    boastOff.addEventListener('click', () => {
+      setBoastfulness(state.boastfulness === null ? 3 : null);
+      boastOff.textContent = state.boastfulness === null
+        ? 'Turn back on — restore boastfulness coaching'
+        : 'Turn off — let the coach default';
+    });
+  }
 
   // Intent reveal
   const intentEl = document.getElementById('intent-reveal');
@@ -1080,6 +1138,7 @@ async function requestInitialCoach() {
         topic: q.topic || null,
         intent: cachedIntent,
         gamification: state.gamificationOn,
+        boastfulness: state.boastfulness,
       }),
     });
 
@@ -1190,6 +1249,7 @@ async function sendChatMessage() {
         rubric: RUBRIC,
         history: state.conversation,
         gamification: state.gamificationOn,
+        boastfulness: state.boastfulness,
       }),
     });
 
@@ -1363,6 +1423,7 @@ Nothing else. No preamble, no closing remarks, no probing questions.`;
         rubric: RUBRIC,
         history: state.conversation,
         gamification: state.gamificationOn,
+        boastfulness: state.boastfulness,
       }),
     });
 

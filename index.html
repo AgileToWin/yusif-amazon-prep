@@ -501,6 +501,18 @@
     </div>
 
     <div class="drawer-group">
+      <label>Coach tone — boastfulness in rewrites</label>
+      <div class="boast-control">
+        <input type="range" id="boast-slider" min="0" max="5" step="1" value="3" class="boast-range">
+        <div class="boast-scale">
+          <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span>
+        </div>
+        <div class="boast-current" id="boast-current">3 · Forward-leaning · active verbs, confident ownership (default)</div>
+      </div>
+      <button class="link-btn" id="boast-off-btn">Turn off — let the coach default</button>
+    </div>
+
+    <div class="drawer-group">
       <label>Session</label>
       <button class="link-btn" id="export-log">Export session log (JSON)</button>
       <button class="link-btn danger" id="clear-session">Clear local session</button>
