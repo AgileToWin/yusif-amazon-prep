@@ -687,10 +687,12 @@ async function loadIntentForCurrentQuestion() {
   const q = list[state.currentIdx];
   if (!q) return;
   if (state.intentLoaded[q.id]) return; // already loaded this session
+  if (state.intentLoading) return; // already in progress
 
+  state.intentLoading = true;
   const content = document.getElementById('intent-content');
   content.classList.add('loading');
-  content.textContent = 'Loading…';
+  content.textContent = 'Reading the question…';
 
   try {
     const token = await getIdToken();
@@ -707,7 +709,14 @@ async function loadIntentForCurrentQuestion() {
         topic: q.topic || null,
       }),
     });
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    if (!resp.ok) {
+      const errBody = await resp.json().catch(() => ({}));
+      const errMsg = errBody.error || `HTTP ${resp.status}`;
+      const details = errBody.details ? ` (${String(errBody.details).substring(0, 120)})` : '';
+      throw new Error(errMsg + details);
+    }
+
     const data = await resp.json();
     content.classList.remove('loading');
     content.innerHTML = renderMarkdown(data.reply || '—');
@@ -715,7 +724,16 @@ async function loadIntentForCurrentQuestion() {
   } catch (e) {
     console.warn('intent fetch failed', e);
     content.classList.remove('loading');
-    content.innerHTML = `<em>(Couldn't load the preview right now.)</em>`;
+    content.innerHTML = `<em>Couldn't load right now: ${escapeHtml(e.message)}.</em> <button class="link-btn retry-intent-btn" style="display:inline; width:auto; color:var(--accent); padding:4px 8px;">Try again</button>`;
+    const retryBtn = content.querySelector('.retry-intent-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        delete state.intentLoaded[q.id];
+        loadIntentForCurrentQuestion();
+      });
+    }
+  } finally {
+    state.intentLoading = false;
   }
 }
 
