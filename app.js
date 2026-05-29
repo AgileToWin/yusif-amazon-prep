@@ -96,11 +96,13 @@ const TRACK_NAMES = {
   r1:   'Round 1 · Friendly',
   r2:   'Round 2 · Mixed',
   r3:   'Round 3 · Bar Raiser',
+  curve: 'Curve Balls',
   closing: 'Closing Questions',
 };
 
 function componentForQuestion(q) {
   if (q.component === 'ask') return 'Ask';
+  if (q.component === 'curve') return 'Curve';
   if (q.component === 'situational') return 'Situational';
   if (q.lp) return 'Behavioral';
   if (q.topic) return 'Technical';
@@ -1009,6 +1011,10 @@ async function requestInitialCoach() {
   try {
     const token = await getIdToken();
     const cachedIntent = state.intentLoaded[q.id] || null;
+    const isCurveBall = q.round === 'curve' || q.component === 'curve';
+    const curveBallFraming = isCurveBall
+      ? '\n\n**This is a CURVE-BALL question — a composure test, not a content test.** The interviewer is throwing this to see how I react when destabilized. Grade my composure, framing, emotional intelligence, and refusal-to-take-the-bait. Did I stay warm under provocation? Did I avoid defensiveness? Did I push back when appropriate? Composure > content here.'
+      : '';
     const resp = await fetch(COACH_URL, {
       method: 'POST',
       headers: {
@@ -1017,7 +1023,7 @@ async function requestInitialCoach() {
       },
       body: JSON.stringify({
         mode: 'initial',
-        question: q.text,
+        question: q.text + curveBallFraming,
         answer: answer || '(the candidate gave no answer)',
         rubric: RUBRIC,
         lpHint: q.lp || null,

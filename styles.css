@@ -1058,6 +1058,7 @@ body.mode-calm .gamified { display: none !important; }
 .tag-component.technical { background: #ecfdf5; color: #047857; }
 .tag-component.situational { background: #fef3c7; color: #92400e; }
 .tag-component.ask { background: #f3e8ff; color: #6b21a8; }
+.tag-component.curve { background: #fce7f3; color: #9d174d; }
 .tag-barraiser {
   background: #fee2e2;
   color: #991b1b;

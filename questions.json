@@ -738,5 +738,126 @@
     "context": "Ask the manager or senior tech. Signals: you think about systems, not just tasks. The 'why hasn't it changed' tail forces the candid answer about politics, budget, or attention. Use this sparingly — once per loop max.",
     "timeHint": "ask in ~15s",
     "strongAnswer": "Bonus: ends the interview on a thoughtful, slightly unusual note. The panel remembers it."
+  },
+
+  {
+    "id": "curve-provocation-background",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Composure under Provocation",
+    "text": "Most career-changers with your background — geology to networks — wash out at AWS within 18 months. What makes you different?",
+    "difficulty": "destabilizer",
+    "timeHint": "~90s",
+    "strongAnswer": "First, recognize: this is a provocation, not a data point. The interviewer is testing whether you flinch, get defensive, or oversell. The playbook is three moves:\n\n(1) **Acknowledge the claim without dismissing it.** \"That sounds plausible for someone who treats the switch as a stepping stone instead of a commitment.\" Refusing the bait. Showing you can hold an uncomfortable framing without panic.\n\n(2) **Distinguish with evidence, not adjectives.** Don't say 'I'm different because I'm motivated.' Say 'the four years of self-study before applying, the five certs, the 3.86 GPA, the two real projects — that's not the profile of someone testing the water.' Specifics make the claim less true without you having to argue it.\n\n(3) **Optional flip — interview them back.** 'Do you have actual data on the career-switcher cohort? I'd genuinely want to know what predicts wash-out — it would inform how I show up.' This move shifts the dynamic. You're no longer defending; you're collaborating on understanding.\n\nDo NOT: get defensive, list your virtues as adjectives, or laugh nervously. Stay warm. The interviewer respects the candidate who handles this without ego.",
+    "probing": [
+      "What if I told you the data actually shows 80% wash-out in the first year?",
+      "How would you know you're in the 20% before you have any data?",
+      "What's the most honest reason you might wash out?"
+    ]
+  },
+  {
+    "id": "curve-impossible-choice",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Refusing the False Binary",
+    "text": "You have 5 minutes. There's a critical incident in the data hall AND a customer-facing P0 in your queue. Both are on you. Which do you handle first?",
+    "difficulty": "destabilizer",
+    "timeHint": "~90s",
+    "strongAnswer": "The trap: most candidates pick one and defend it. That's the wrong move because the question is rigged — it's an impossible-choice frame.\n\nThe right move: **don't pick. Push back on the framing.**\n\n'Five minutes for both, alone, isn't a triage problem — it's an escalation problem. I'd take 30 seconds to page my shift lead with both incidents, ask for a second hand, then start with whichever has the larger blast radius based on what I know in those 30 seconds.'\n\nThat answer signals three things the panel wants to see: (1) you don't take the bait, (2) you escalate appropriately under pressure (not pride), (3) you reason from criteria, not gut.\n\nIf they push you to pick anyway — 'just say you're alone, your lead's unreachable, pick one' — then name the criterion explicitly: 'Customer blast radius would tip me. A P0 that's already affecting hundreds of customers outweighs a data-hall incident that might affect zero. But I'm picking on incomplete information; I'd be very vocal about that in the after-action.' Confidence + epistemic honesty.\n\nDo NOT: pick instantly without acknowledging it's a bad situation. That signals you don't see the trap.",
+    "probing": [
+      "OK, your lead is unreachable. Pick.",
+      "What if the data-hall incident is the kind that COULD cause a wider customer outage in 10 minutes?",
+      "How do you defend your choice in the after-action when leadership is in the room?"
+    ]
+  },
+  {
+    "id": "curve-personal-why-switch",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Vulnerability + Warmth",
+    "text": "Why did you really leave geological engineering? Not the polished resume version. The honest one.",
+    "difficulty": "destabilizer",
+    "timeHint": "~90s",
+    "strongAnswer": "This one is a gift if you have an honest answer ready, and a disaster if you don't.\n\nThe interviewer is testing: (1) can you be vulnerable without oversharing, (2) is your polished story masking something fragile, (3) do you have enough self-awareness to give a real answer.\n\nHave one real answer ready. Not the resume polish. Something like:\n\n'The honest version is that geological engineering jobs in Ghana were drying up — oil and mining contracted. I could have moved abroad chasing a dwindling pool, or I could lean into where the work was going. I made a bet. The bet is also that the discipline transfers — and so far the bet is holding. The cleaner narrative — 'I always loved tech' — wouldn't be true.'\n\nThat answer is: honest, vulnerable, confident, and ends on forward motion. The interviewer respects it because it doesn't paper over the bet you took.\n\nDo NOT: stick to the polished story under pressure (they'll smell it). Don't overshare about family pressure / financial strain / personal pain. Land on one true sentence, then bridge to forward motion: 'so I made a bet, and I'm here to make it work.'",
+    "probing": [
+      "What if the bet doesn't pay off — what's your fallback?",
+      "Are you sure you're not romanticizing the switch?",
+      "Have you told this version to anyone else, or is this the first time?"
+    ]
+  },
+  {
+    "id": "curve-silence-test",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Composure in Silence",
+    "text": "[Simulated: After Yusif finishes his answer, the interviewer nods slowly, says '...and?' once, then waits silently. 20 seconds pass. The silence is real and uncomfortable.]",
+    "difficulty": "destabilizer",
+    "timeHint": "~45s",
+    "strongAnswer": "The silence test is the single most common curve ball in tech interviews. Most candidates fill it with weakening commentary: 'I mean, that's pretty much it...' or 'Did that answer your question?' or 'I could go deeper if you want...'\n\nEvery one of those signals nervousness. The interviewer is watching to see if you can hold space.\n\n**The right response options:**\n\n(a) **Hold the silence.** Make eye contact. Smile slightly. Wait. If 10-15 seconds pass, that's the answer. You held it. Move on confidently.\n\n(b) **Active question back.** 'That's the core of it. Is there a specific angle you want me to dig into?' This is not the same as 'did that answer your question?' — it's an invitation to direct the conversation, not a plea for validation.\n\n(c) **One sharp closer.** Reuse the strongest sentence of your answer with slight rephrase. 'Bottom line — [the result]. That's the headline.' Then stop.\n\nDo NOT: fill with apology, hedging, restate the whole answer, or laugh nervously. The interviewer is timing you. The silence is the test.\n\nPractice this. Sit in front of a mirror, give an answer, then count to 15 before saying anything else.",
+    "probing": [
+      "You held the silence — but how do you know they didn't want more depth?",
+      "What if the silence is 30 seconds, not 15?",
+      "How do you stay warm while not blinking?"
+    ]
+  },
+  {
+    "id": "curve-same-question-twice",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Story Consistency",
+    "text": "Tell me about Customer Obsession again. I want to see if you describe it the same way you did 20 minutes ago.",
+    "difficulty": "destabilizer",
+    "timeHint": "~90s",
+    "strongAnswer": "This question is a consistency check. Real stories stay consistent in shape and detail; fabricated stories drift.\n\n**The right response:** tell the same story. Same person. Same situation. Same outcome. Same arc.\n\nDetails will vary slightly — that's actually a SIGNAL of authenticity. Memorized stories come out word-for-word; lived stories vary in surface and stay constant in substance. Don't try to remember every phrase from the first telling. Lean on the truth of it.\n\nIf you're caught off-balance by the question itself, you can acknowledge it warmly: 'I'll tell it the same way because it actually happened that way — let me know if anything sounds different from the first telling.' That's a confidence move. You're not defending; you're inviting them to check.\n\n**What NOT to do:**\n- Don't second-guess yourself mid-story and reverse course (that signals you're inventing)\n- Don't apologize for not remembering the exact same wording\n- Don't switch to a different story to avoid the comparison (the worst possible move — that's the signal they were testing for)\n\nIf you genuinely have multiple stories for the same LP (you should), and they didn't specify which one: pick the one you told 20 minutes ago. Always.",
+    "probing": [
+      "You said 'I' last time and 'we' this time on the same beat. Why?",
+      "Is there any chance some of the details have shifted because the story isn't quite as it happened?",
+      "Tell me a different Customer Obsession story now."
+    ]
+  },
+  {
+    "id": "curve-precision-trap",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Precision Under Pressure",
+    "text": "You mentioned earlier you 'handled' a customer escalation. Walk me through what 'handled' means — step by step, minute by minute.",
+    "difficulty": "destabilizer",
+    "timeHint": "~2 min",
+    "strongAnswer": "The interviewer is testing whether your imprecise word ('handled') was hiding fabrication or just normal abbreviation.\n\n**Two paths.**\n\n**Path 1 — the story is real and you can slow down.** Slow your pace. Narrate the actual sequence. 'Minute zero, customer calls in. Minute one to three, I let them vent without correction. Minute three, I asked the verification questions to confirm scope. Minutes four to fifteen, I walked them through the issue and the fix. Minute fifteen to twenty, I confirmed they could repro the fix. Minute twenty to twenty-five, we talked about how to prevent it next time.' The fact that you CAN do this is the proof. Granular truth.\n\n**Path 2 — you don't actually remember minute by minute.** Don't fabricate. The honest move: 'I don't remember it minute by minute — it was eight months ago. I remember the arc. Customer was escalated at minute zero; by minute twenty-five we'd resolved it. The middle was de-escalation, root cause, fix. The minute-by-minute I'd be inventing.' That answer scores HIGHER than fabricated precision, because the interviewer is specifically watching for invention.\n\n**The trap is fabricating precision under pressure.** They've seen 100 candidates do it. They know what it sounds like. Honest imprecision beats fabricated precision every time.",
+    "probing": [
+      "OK — give me the words you used to verify the customer's identity.",
+      "What was the customer's actual reaction at minute three?",
+      "If I called this customer tomorrow, would they remember the call?"
+    ]
+  },
+  {
+    "id": "curve-technical-pivot",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Humility + Engagement",
+    "text": "Forget the deploy tech role for a second. Linux box, kernel panic at boot, root access. Where do you start?",
+    "difficulty": "destabilizer",
+    "timeHint": "~2 min",
+    "strongAnswer": "The interviewer is testing two things at once: (1) are you brittle — only know your applied lane — or curious enough to engage outside it? (2) Are you willing to admit gaps?\n\nThe wrong answers are:\n- Fake competence ('I'd attach a debugger and step through the panic')\n- Refuse to engage ('That's not really in my wheelhouse so I'd pass')\n- Pretend it's adjacent to your real skill ('It's basically like network troubleshooting')\n\nThe right answer engages at the level you actually have.\n\n'I haven't debugged a kernel panic in production. What I'd do, starting from what I know: boot into single-user mode if I could; pull /var/log/messages and dmesg from the previous boot; check if there was a recent kernel update or module install. If those don't expose it, I'd look at the panic message itself — sometimes it names the module. If I'm still stuck, I'd pair with a senior on the team. Kernel debugging isn't my depth and I'd be slow on my own.'\n\nThat answer wins because it shows three things: (1) you have legitimate first-principles instincts (log first, recent change second), (2) you know what you don't know, (3) you'd ask for help without ego. Top engineers respect that. Fakers don't survive the follow-ups.\n\n**Curiosity > fake expertise.** Always.",
+    "probing": [
+      "What's the difference between a kernel panic and a regular crash?",
+      "If the box doesn't boot into single-user mode either, then what?",
+      "Tell me a technical topic you're genuinely weak in — not as a humble-brag."
+    ]
+  },
+  {
+    "id": "curve-ego-check",
+    "round": "curve",
+    "component": "curve",
+    "lp": "Self-Awareness",
+    "text": "You've described yourself pretty well across these questions. Tell me about a time you were just average — not a setback, not a learning moment, just a project where you were genuinely mid.",
+    "difficulty": "destabilizer",
+    "timeHint": "~2 min",
+    "strongAnswer": "The interviewer is testing whether you have self-awareness or only have polished narratives. Every previous LP question has been a setup for greatness. This one is the opposite: prove you can admit ordinariness without spinning it.\n\nThe failure modes:\n- **Humble-brag** ('I'm just average at organizing my schedule — I'm always too focused on the work'). The panel sees this. Disqualifying.\n- **Hidden brag** ('I was just average at one of my Pace classes — I got an A-minus instead of an A'). Same trap.\n- **Genuine setback dressed as ordinary** ('There was this time I failed at...'). They asked for ordinary, not setback. You missed the question.\n\n**The win is a genuinely ordinary moment.** Something like:\n\n'My first semester at Pace, two of my courses I was just average in. Not failing — average. A B and a B-plus. I was learning to manage school-with-work and I picked the wrong study technique for the algorithms class. I got the B. The honest read is that 'just average' was the right outcome for the bandwidth I had that semester. Nothing dramatic. Nothing redemptive. Just a normal grade for a normal effort.'\n\nThat answer wins because it's: real, low-stakes, low-drama, and unspun. The room respects ordinariness when it's not packaged. The candidate who can say 'I was just average and that was fine' is the candidate the room trusts.\n\n**Pre-bake one of these. Keep it small.** A normal grade. A B+ paper. A workout routine that didn't stick.",
+    "probing": [
+      "Why did 'just average' bother you, if it did?",
+      "Are you sure you're not still putting a positive spin on this?",
+      "Tell me about something you're CURRENTLY average at."
+    ]
   }
 ]
