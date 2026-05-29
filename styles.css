@@ -326,6 +326,30 @@ button {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
+  margin-bottom: 28px;
+}
+.track-section-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin: 8px 0 10px;
+}
+.track-section-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+.track-card-secondary {
+  background: var(--bg-soft);
+  border-color: var(--accent-soft);
+}
+.track-card-secondary:hover {
+  background: var(--bg-card);
+  border-color: var(--accent);
 }
 .track-card {
   background: var(--bg-card);
