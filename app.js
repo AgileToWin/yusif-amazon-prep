@@ -9,6 +9,9 @@ const FIREBASE_CONFIG = {
   appId: "1:170972277087:web:0819c5220f36957f8beeea"
 };
 
+// AI coach worker endpoint
+const COACH_URL = 'https://yusif-prep-coach.projects-websynk.workers.dev';
+
 // Hardcoded allowlist (same identities as dashboard).
 const ALLOWLIST = {
   yusif:   ['MYNazir', 'naziryusif8', 'naziryusif8@gmail.com'],
@@ -54,7 +57,8 @@ const state = {
   currentRound: null,
   currentIdx: 0,
   reviewMode: false,
-  scores: {},
+  conversation: [],
+  coachBusy: false,
   tone: 'friendly',
   availableVoices: [],
   recognition: null,
@@ -99,6 +103,20 @@ function bindEvents() {
   document.getElementById('play-audio').addEventListener('click', playRecording);
   document.getElementById('submit-answer').addEventListener('click', submitAnswer);
   document.getElementById('save-next').addEventListener('click', saveAndNext);
+
+  document.getElementById('chat-send').addEventListener('click', sendChatMessage);
+  document.getElementById('chat-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendChatMessage();
+    }
+  });
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById('chat-input').value = chip.dataset.prompt;
+      sendChatMessage();
+    });
+  });
 
   document.getElementById('close-drawer').addEventListener('click', closeDrawer);
   document.getElementById('drawer-overlay').addEventListener('click', closeDrawer);
@@ -239,28 +257,24 @@ function renderQuestion() {
   document.getElementById('q-text').textContent = q.text;
   document.getElementById('q-lp').textContent = q.lp || q.topic || '—';
   document.getElementById('q-time').textContent = q.timeHint || '~90s';
-  document.getElementById('strong-answer').textContent = q.strongAnswer || '—';
-
-  const probing = document.getElementById('probing-list');
-  probing.innerHTML = '';
-  (q.probing || []).forEach(p => {
-    const li = document.createElement('li');
-    li.textContent = p;
-    probing.appendChild(li);
-  });
-  document.getElementById('probing-count').textContent = (q.probing || []).length;
 
   // Reset question view
   const ta = document.getElementById('answer-text');
   ta.value = '';
   ta.readOnly = false;
   ta.classList.remove('locked');
-  document.getElementById('notes').value = '';
   document.getElementById('reattempt').checked = false;
-  state.scores = {};
-  renderScoreGrid();
+  state.conversation = [];
   resetTimer();
   resetRecording();
+
+  // Reset review view
+  document.getElementById('coach-feedback').innerHTML = '';
+  document.getElementById('coach-error').hidden = true;
+  document.getElementById('chat-history').innerHTML = '';
+  document.getElementById('chat-input').value = '';
+  document.getElementById('chat-input-row').hidden = true;
+  document.getElementById('chat-prompts').hidden = true;
 
   document.getElementById('question-view').hidden = false;
   document.getElementById('review-view').hidden = true;
@@ -268,7 +282,7 @@ function renderQuestion() {
 }
 
 // ============= SUBMIT / SAVE-NEXT =============
-function submitAnswer() {
+async function submitAnswer() {
   stopMicAndRecording();
   stopTimer();
 
@@ -282,6 +296,8 @@ function submitAnswer() {
   state.reviewMode = true;
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  await requestInitialCoach();
 }
 
 function saveAndNext() {
@@ -295,8 +311,7 @@ function saveAndNext() {
       questionId: q.id,
       questionText: q.text,
       answer: document.getElementById('answer-text').value,
-      scores: { ...state.scores },
-      notes: document.getElementById('notes').value,
+      conversation: state.conversation,
       reattempt: document.getElementById('reattempt').checked,
     });
     localStorage.setItem('session_log', JSON.stringify(state.sessionLog));
@@ -310,36 +325,151 @@ function saveAndNext() {
   }
 }
 
-// ============= SCORE GRID =============
-function renderScoreGrid() {
-  const grid = document.getElementById('score-grid');
-  grid.innerHTML = '';
-  RUBRIC.forEach(dim => {
-    const row = document.createElement('div');
-    row.className = 'score-row';
+// ============= COACH (AI) =============
+async function getIdToken() {
+  const user = firebase.auth().currentUser;
+  if (!user) throw new Error('Not signed in');
+  return await user.getIdToken();
+}
 
-    const name = document.createElement('div');
-    name.className = 'name';
-    name.innerHTML = `<strong>${dim.name}</strong><span class="hint">${dim.hint}</span>`;
+function renderMarkdown(text) {
+  let html = String(text || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  return html;
+}
 
-    const dots = document.createElement('div');
-    dots.className = 'dots';
-    for (let i = 1; i <= 5; i++) {
-      const dot = document.createElement('button');
-      dot.className = 'dot';
-      dot.type = 'button';
-      dot.dataset.value = i;
-      dot.addEventListener('click', () => {
-        state.scores[dim.id] = i;
-        [...dots.children].forEach((c, idx) => c.classList.toggle('filled', idx + 1 <= i));
-      });
-      dots.appendChild(dot);
+function setCoachStatus(text, busy) {
+  const el = document.getElementById('coach-status');
+  el.textContent = text;
+  el.classList.toggle('thinking', !!busy);
+}
+
+function showCoachError(message) {
+  const el = document.getElementById('coach-error');
+  el.textContent = message;
+  el.hidden = false;
+}
+
+async function requestInitialCoach() {
+  const list = questionsForRound(state.currentRound);
+  const q = list[state.currentIdx];
+  if (!q) return;
+
+  const answer = document.getElementById('answer-text').value.trim();
+  setCoachStatus('Reading your answer…', true);
+  document.getElementById('coach-feedback').innerHTML = '';
+  document.getElementById('coach-error').hidden = true;
+  state.coachBusy = true;
+
+  try {
+    const token = await getIdToken();
+    const resp = await fetch(COACH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: 'initial',
+        question: q.text,
+        answer: answer || '(the candidate gave no answer)',
+        rubric: RUBRIC,
+        lpHint: q.lp || null,
+        topic: q.topic || null,
+      }),
+    });
+
+    if (!resp.ok) {
+      const err = await safeJson(resp);
+      throw new Error(err.error || `HTTP ${resp.status}`);
     }
 
-    row.appendChild(name);
-    row.appendChild(dots);
-    grid.appendChild(row);
-  });
+    const data = await resp.json();
+    state.conversation = [
+      { role: 'user', content: `**Question I was asked:**\n${q.text}\n\n**My answer (spoken/transcribed):**\n${answer}\n\nGrade me.` },
+      { role: 'assistant', content: data.reply },
+    ];
+    document.getElementById('coach-feedback').innerHTML = renderMarkdown(data.reply);
+    setCoachStatus('Done.', false);
+
+    document.getElementById('chat-input-row').hidden = false;
+    document.getElementById('chat-prompts').hidden = false;
+  } catch (e) {
+    console.error('coach request failed', e);
+    showCoachError(`Couldn't reach the coach: ${e.message}. Try refreshing your sign-in (sign out and back in) — the token may have expired.`);
+    setCoachStatus('Offline.', false);
+  } finally {
+    state.coachBusy = false;
+  }
+}
+
+async function sendChatMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || state.coachBusy) return;
+  if (state.conversation.length === 0) return;
+
+  input.value = '';
+  state.coachBusy = true;
+
+  // Push user message to history + render
+  state.conversation.push({ role: 'user', content: text });
+  appendChatMsg('user', text);
+  appendChatMsg('coach', '', true); // placeholder for streaming feel
+  const coachEl = document.querySelector('.chat-msg.coach:last-of-type');
+
+  try {
+    const token = await getIdToken();
+    const resp = await fetch(COACH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: 'followup',
+        rubric: RUBRIC,
+        history: state.conversation,
+      }),
+    });
+
+    if (!resp.ok) {
+      state.conversation.pop();
+      const err = await safeJson(resp);
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    state.conversation.push({ role: 'assistant', content: data.reply });
+    coachEl.innerHTML = renderMarkdown(data.reply);
+  } catch (e) {
+    console.error('chat request failed', e);
+    coachEl.innerHTML = `<em>Couldn't reach the coach: ${e.message}</em>`;
+  } finally {
+    state.coachBusy = false;
+    coachEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+}
+
+function appendChatMsg(role, text, thinking) {
+  const history = document.getElementById('chat-history');
+  const el = document.createElement('div');
+  el.className = `chat-msg ${role}`;
+  if (thinking) {
+    el.innerHTML = '<em style="color: var(--text-muted);">Coach is thinking…</em>';
+  } else {
+    el.innerHTML = renderMarkdown(text);
+  }
+  history.appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+async function safeJson(resp) {
+  try { return await resp.json(); } catch (_) { return {}; }
 }
 
 // ============= TTS =============
