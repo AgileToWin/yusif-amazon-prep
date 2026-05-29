@@ -100,6 +100,7 @@ function bindEvents() {
   document.getElementById('speak-q').addEventListener('click', speakQuestion);
   document.getElementById('mic-toggle').addEventListener('click', toggleMic);
   document.getElementById('focus-textarea').addEventListener('click', () => document.getElementById('answer-text').focus());
+  document.getElementById('answer-text').addEventListener('input', updateAnswerStats);
   document.getElementById('play-audio').addEventListener('click', playRecording);
   document.getElementById('submit-answer').addEventListener('click', submitAnswer);
   document.getElementById('save-next').addEventListener('click', saveAndNext);
@@ -332,6 +333,7 @@ function renderQuestion() {
   state.conversation = [];
   resetTimer();
   resetRecording();
+  updateAnswerStats();
 
   // Reset review view
   document.getElementById('coach-feedback').innerHTML = '';
@@ -830,6 +832,34 @@ function resetRecording() {
   }
   const play = document.getElementById('play-audio');
   if (play) play.hidden = true;
+}
+
+// ============= ANSWER STATS (word count + speaking time estimate) =============
+// Assumes ~150 words/min spoken pace (typical interview cadence).
+function updateAnswerStats() {
+  const stats = document.getElementById('answer-stats');
+  if (!stats) return;
+  const text = document.getElementById('answer-text').value.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  stats.classList.remove('warn', 'ok');
+  if (words === 0) {
+    stats.textContent = '';
+    return;
+  }
+  const seconds = Math.round((words / 150) * 60);
+  const mm = Math.floor(seconds / 60);
+  const ss = seconds % 60;
+  const timeStr = mm > 0 ? `${mm}m ${ss}s` : `${ss}s`;
+  let prefix = '';
+  if (seconds <= 90) {
+    stats.classList.add('ok');
+  } else if (seconds <= 130) {
+    // sweet spot tail — no warn yet
+  } else {
+    stats.classList.add('warn');
+    prefix = '⚠ ';
+  }
+  stats.textContent = `${prefix}${words} words · ≈ ${timeStr} spoken`;
 }
 
 // ============= TIMER =============
