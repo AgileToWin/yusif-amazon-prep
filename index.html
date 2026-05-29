@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>YN Prep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+<!-- LOADING SPLASH -->
+<div class="screen" id="screen-loading">
+  <div class="card center">
+    <div class="spinner"></div>
+    <p class="muted">Loading…</p>
+  </div>
+</div>
+
+<!-- LOGIN -->
+<div class="screen" id="screen-login" hidden>
+  <div class="card center login-card">
+    <div class="brand-mark">YN</div>
+    <h1>Welcome back.</h1>
+    <p class="subtitle">Amazon Network Deploy Tech — interview prep</p>
+    <button class="btn-github" id="signin-btn">
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+        <path fill="currentColor" d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55 0-.27-.01-1.16-.02-2.1-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.47.11-3.06 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.77.12 3.06.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14 0 1.54-.01 2.78-.01 3.16 0 .3.21.67.79.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
+      </svg>
+      Continue with GitHub
+    </button>
+    <p class="muted small">Only authorized accounts can access this tool.</p>
+    <p class="error" id="login-error" hidden></p>
+  </div>
+</div>
+
+<!-- ACCESS DENIED -->
+<div class="screen" id="screen-denied" hidden>
+  <div class="card center login-card">
+    <div class="brand-mark warn">!</div>
+    <h1>Access denied</h1>
+    <p class="subtitle">The GitHub account <strong id="denied-user">—</strong> isn't on the access list.</p>
+    <button class="btn-secondary" id="signout-btn-denied">Sign out</button>
+  </div>
+</div>
+
+<!-- TRACK PICKER -->
+<div class="screen" id="screen-tracks" hidden>
+  <header class="top-bar">
+    <div class="brand-text">YN Prep</div>
+    <div class="user-pill">
+      <img id="user-avatar" alt="" hidden>
+      <span id="user-name">—</span>
+      <button class="icon-btn" id="open-settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98a7.46 7.46 0 0 0 0-1.96l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.32 7.32 0 0 0-1.7-.98l-.38-2.65a.5.5 0 0 0-.49-.42h-4a.5.5 0 0 0-.49.42l-.38 2.65a7.32 7.32 0 0 0-1.7.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65a7.46 7.46 0 0 0 0 1.96l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.51.39 1.07.72 1.7.98l.38 2.65c.04.24.25.42.49.42h4c.24 0 .45-.18.49-.42l.38-2.65a7.32 7.32 0 0 0 1.7-.98l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <h1 class="page-title">Pick a track.</h1>
+    <p class="page-sub">Each session saves to your browser. Export from settings anytime.</p>
+
+    <div class="track-grid">
+      <button class="track-card" data-round="tech">
+        <div class="track-icon">📡</div>
+        <h2>Tech Drill</h2>
+        <p class="track-sub">Fundamentals · OSI · subnetting · OTDR · BGP · Linux</p>
+        <div class="track-meta"><span>12 questions</span><span>~30 min</span></div>
+        <div class="track-cta">Begin →</div>
+      </button>
+      <button class="track-card" data-round="r1">
+        <div class="track-icon">💬</div>
+        <h2>Round 1 · Friendly</h2>
+        <p class="track-sub">Warm tone. Open with the hook. Build STAR cadence.</p>
+        <div class="track-meta"><span>9 questions</span><span>~20 min</span></div>
+        <div class="track-cta">Begin →</div>
+      </button>
+      <button class="track-card" data-round="r2">
+        <div class="track-icon">🎯</div>
+        <h2>Round 2 · Mixed</h2>
+        <p class="track-sub">Warm + probing. Target weak LPs from Round 1.</p>
+        <div class="track-meta"><span>8 questions</span><span>~25 min</span></div>
+        <div class="track-cta">Begin →</div>
+      </button>
+      <button class="track-card" data-round="r3">
+        <div class="track-icon">🔥</div>
+        <h2>Round 3 · Bar Raiser</h2>
+        <p class="track-sub">Stacked probing. Time pressure. Honest gaps required.</p>
+        <div class="track-meta"><span>10 questions</span><span>~30 min</span></div>
+        <div class="track-cta">Begin →</div>
+      </button>
+    </div>
+
+    <p class="last-session" id="last-session-hint" hidden></p>
+  </main>
+</div>
+
+<!-- DRILL -->
+<div class="screen" id="screen-drill" hidden>
+  <header class="top-bar">
+    <button class="icon-btn" id="back-to-tracks" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19l-7-7 7-7 1.4 1.4L11.3 12l5.6 5.6z"/></svg>
+    </button>
+    <div class="drill-meta">
+      <span id="track-name">Tech Drill</span>
+      <span class="dot">·</span>
+      <span id="q-progress">Question 1 of 12</span>
+    </div>
+    <button class="icon-btn" id="open-settings-drill" aria-label="Settings">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98a7.46 7.46 0 0 0 0-1.96l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.32 7.32 0 0 0-1.7-.98l-.38-2.65a.5.5 0 0 0-.49-.42h-4a.5.5 0 0 0-.49.42l-.38 2.65a7.32 7.32 0 0 0-1.7.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65a7.46 7.46 0 0 0 0 1.96l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.51.39 1.07.72 1.7.98l.38 2.65c.04.24.25.42.49.42h4c.24 0 .45-.18.49-.42l.38-2.65a7.32 7.32 0 0 0 1.7-.98l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+    </button>
+  </header>
+
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <main class="container drill-main">
+    <section class="question-view" id="question-view">
+      <div class="q-tags">
+        <span class="tag" id="q-lp">LP</span>
+        <span class="tag muted" id="q-time">~90s</span>
+      </div>
+      <h2 class="question-text" id="q-text">Loading question…</h2>
+
+      <div class="action-row">
+        <button class="action-btn" id="speak-q">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.23v2.06A6.99 6.99 0 0 1 19 12a6.99 6.99 0 0 1-5 6.71v2.06A9 9 0 0 0 14 3.23z"/></svg>
+          Hear it
+        </button>
+        <button class="action-btn primary" id="mic-toggle">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+          <span id="mic-label">Speak</span>
+        </button>
+        <button class="action-btn" id="focus-textarea">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 14H4V6h16v12zM6 9h2v6H6V9zm4 0h8v2h-8V9zm0 4h8v2h-8v-2z"/></svg>
+          Type
+        </button>
+      </div>
+
+      <textarea id="answer-text" rows="6" placeholder="Your answer appears here as you speak or type."></textarea>
+
+      <div class="meta-row-drill">
+        <span class="timer" id="timer">00:00</span>
+        <button class="play-back" id="play-audio" hidden>▶ Play your recording</button>
+      </div>
+
+      <button class="submit-btn" id="submit-answer">Submit answer →</button>
+    </section>
+
+    <section class="review-view" id="review-view" hidden>
+      <div class="locked-answer">
+        <div class="section-label">Your answer (locked)</div>
+        <div class="locked-content" id="locked-answer-text">—</div>
+      </div>
+
+      <div class="strong-section">
+        <div class="section-label">Strong-answer template</div>
+        <div class="strong-content" id="strong-answer">—</div>
+      </div>
+
+      <details class="probing-section">
+        <summary>Bar Raiser follow-ups <span class="badge" id="probing-count">3</span></summary>
+        <ol class="probing-list" id="probing-list"></ol>
+      </details>
+
+      <div class="score-section">
+        <div class="section-label">Score yourself</div>
+        <div id="score-grid"></div>
+      </div>
+
+      <textarea id="notes" rows="3" placeholder="Notes — what worked, what to fix"></textarea>
+
+      <label class="reattempt-row">
+        <input type="checkbox" id="reattempt">
+        <span>Mark for re-attempt</span>
+      </label>
+
+      <button class="submit-btn" id="save-next">Save & next →</button>
+    </section>
+  </main>
+</div>
+
+<!-- SETTINGS DRAWER -->
+<aside class="drawer" id="drawer" hidden>
+  <div class="drawer-overlay" id="drawer-overlay"></div>
+  <div class="drawer-panel">
+    <div class="drawer-head">
+      <h3>Settings</h3>
+      <button class="icon-btn" id="close-drawer" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <div class="drawer-group">
+      <label>Voice</label>
+      <select id="voice-select"></select>
+      <button class="link-btn" id="test-voice">Test the selected voice</button>
+    </div>
+
+    <div class="drawer-group">
+      <label>Tone</label>
+      <div class="seg-control">
+        <button data-tone="friendly" class="active">Friendly</button>
+        <button data-tone="skeptical">Skeptical</button>
+      </div>
+    </div>
+
+    <div class="drawer-group">
+      <label>Session</label>
+      <button class="link-btn" id="export-log">Export session log (JSON)</button>
+      <button class="link-btn danger" id="clear-session">Clear local session</button>
+    </div>
+
+    <div class="drawer-group">
+      <button class="link-btn signout-btn" id="signout-btn">Sign out</button>
+    </div>
+  </div>
+</aside>
+
+<script src="app.js"></script>
+</body>
+</html>

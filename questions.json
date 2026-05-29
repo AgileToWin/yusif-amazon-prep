@@ -1,0 +1,548 @@
+[
+  {
+    "id": "tech-osi-1",
+    "round": "tech",
+    "topic": "OSI Model",
+    "text": "Walk me through the OSI model layer by layer. For a CRC error on a fiber link, which layer would you investigate first and why?",
+    "difficulty": "fundamentals",
+    "timeHint": "~3 min",
+    "strongAnswer": "Walk top-down: L7 Application (HTTP, DNS), L6 Presentation (TLS, encoding), L5 Session (NetBIOS), L4 Transport (TCP reliable, UDP best-effort), L3 Network (IP, routing), L2 Data Link (Ethernet, MAC, ARP, CRC), L1 Physical (copper, fiber, transceivers). For CRC errors on fiber, start at L1/L2 — CRC is the L2 check on an L1 frame. Physical media is the first suspect: dirty connector, bad patch cord, transceiver mismatch, marginal fiber. I'd check the transceiver first because it's the cheapest swap, then the patch cord at both ends, then OTDR the run. Memory aid: 'Please Do Not Throw Sausage Pizza Away.'",
+    "probing": [
+      "If the OTDR shows a clean trace but you still see CRC errors, what's your next step?",
+      "How would you rule out a transceiver issue versus a NIC issue?",
+      "What's the difference between an Ethernet CRC and a TCP checksum, and why does it matter here?"
+    ]
+  },
+  {
+    "id": "tech-osi-2",
+    "round": "tech",
+    "topic": "OSI Model",
+    "text": "A user complains they can ping by IP but not by hostname. Where in the OSI stack is the problem?",
+    "difficulty": "fundamentals",
+    "timeHint": "~90s",
+    "strongAnswer": "Ping by IP works → L1, L2, L3 are healthy end-to-end. Ping by hostname fails → name resolution is broken. That's L7 — specifically DNS. Diagnostic flow: `dig hostname` to see what the resolver returns; check `/etc/resolv.conf` for the configured DNS servers; verify the DNS server is reachable (`ping`) and answering (`dig @<server> hostname`); check `/etc/nsswitch.conf` to make sure DNS is in the lookup order. Common causes: wrong DNS server pushed by DHCP, search domain misconfiguration, or the record genuinely doesn't exist.",
+    "probing": [
+      "What if `dig` returns SERVFAIL — what does that tell you?",
+      "How does `/etc/hosts` interact with DNS?",
+      "If only some hostnames fail, what does that suggest?"
+    ]
+  },
+  {
+    "id": "tech-subnetting-1",
+    "round": "tech",
+    "topic": "IP / Subnetting",
+    "text": "A /27 subnet — how many usable host addresses, and why?",
+    "difficulty": "fundamentals",
+    "timeHint": "~60s",
+    "strongAnswer": "/27 means 27 bits are network, so 32 - 27 = 5 host bits. 2^5 = 32 total addresses. Subtract 2 — one for the network address (all-zeros host) and one for the broadcast address (all-ones host) — leaving 30 usable host addresses. Common /27 use is a small VLAN or a DMZ segment where 30 hosts is enough.",
+    "probing": [
+      "What's the broadcast address of 192.168.1.32/27?",
+      "When would you use a /31 instead of a /30?",
+      "What's the difference between VLSM and CIDR?"
+    ]
+  },
+  {
+    "id": "tech-subnetting-2",
+    "round": "tech",
+    "topic": "IP / Subnetting",
+    "text": "You need 4 subnets, each supporting at least 50 hosts, sliced from a /23. Walk me through how you'd allocate.",
+    "difficulty": "intermediate",
+    "timeHint": "~3 min",
+    "strongAnswer": "A /23 is 2^9 = 512 addresses. I need 4 subnets of 50+ hosts each. To support 50 hosts, I need 2^N - 2 ≥ 50, so N=6 gives me 62 usable — a /26 fits. Four /26s = 4 × 64 = 256 addresses, using half the /23. So slice the /23 into 4 contiguous /26s and leave the remaining /24 for growth. If the /23 is 10.0.0.0/23: 10.0.0.0/26 (0–63), 10.0.0.64/26 (64–127), 10.0.0.128/26 (128–191), 10.0.0.192/26 (192–255), and 10.0.1.0/24 reserved.",
+    "probing": [
+      "Why /26 and not /27?",
+      "What if one of those subnets needs to grow to 100 hosts later?",
+      "How would you document this allocation so the next tech doesn't undo it?"
+    ]
+  },
+  {
+    "id": "tech-fiber-smf-mmf",
+    "round": "tech",
+    "topic": "SMF vs MMF",
+    "text": "When do you choose single-mode versus multi-mode fiber? Give me a concrete example of each.",
+    "difficulty": "fundamentals",
+    "timeHint": "~2 min",
+    "strongAnswer": "Single-mode (8-10 μm core, laser source, 1310/1550 nm) for distance — typical 10G runs of kilometers, long-haul, inter-building, data center backbone. Multi-mode (50 or 62.5 μm core, LED/VCSEL, 850/1300 nm) for short runs — rack-to-rack, within a data hall, typically under 400 m at 10G on OM4. Concrete: I'd run SMF between two data center buildings 800 m apart. I'd run OM4 MMF for the 10G interconnect between two switches three racks apart. Transceivers must match the fiber type and wavelength; mismatching them produces severe loss.",
+    "probing": [
+      "Why would you ever use single-mode for a 50-meter run inside a rack?",
+      "What's the difference between OM3, OM4, and OM5?",
+      "If someone hands you an unlabeled patch cord, how do you tell SMF from MMF?"
+    ]
+  },
+  {
+    "id": "tech-otdr-trace",
+    "round": "tech",
+    "topic": "OTDR",
+    "text": "You're reading an OTDR trace and you see a 3 dB drop at 240 meters on a 500-meter fiber run, with no reflective spike. What does that suggest, and what's your next step?",
+    "difficulty": "intermediate",
+    "timeHint": "~2 min",
+    "strongAnswer": "A drop with no reflection points to either a splice with high loss or a tight bend at 240 m — both absorb light without back-reflecting. A bad connector would show a spike (back-reflection) and a drop. So I'd suspect a fusion splice that didn't fuse cleanly, or macrobending at a cable management transition. Next step: physically inspect the run at the 240 m mark, looking for: a splice closure (open it, check the splice), a 90-degree bend or zip-tie pulled too tight, a kink at a panel transition. If it's a splice, I'd re-fuse it. If it's a bend, I'd reroute. Then re-measure with the OTDR.",
+    "probing": [
+      "What if you re-fuse the splice and the loss is still 3 dB?",
+      "How does the OTDR's 'dead zone' affect this measurement?",
+      "Why does a tight bend cause loss at all — what's happening physically?"
+    ]
+  },
+  {
+    "id": "tech-vfl-otdr",
+    "round": "tech",
+    "topic": "VFL",
+    "text": "When would you reach for a VFL rather than an OTDR?",
+    "difficulty": "fundamentals",
+    "timeHint": "~90s",
+    "strongAnswer": "VFL (Visual Fault Locator) injects a visible red laser, ~650 nm. It's a fast qualitative check — wherever the fiber is broken or badly bent, the red light leaks out and you see it. I'd reach for VFL when: I need a quick yes/no on whether a fiber has a major fault; I'm trying to identify which strand in a bundle goes where (light one end, look at the other); I'm verifying basic continuity end-to-end. OTDR is for quantitative answers — exact distance to fault, loss in dB, splice quality certification. VFL is the 30-second tool; OTDR is the 10-minute tool. Safety: never look directly into a connector; treat any disconnected fiber as live.",
+    "probing": [
+      "If the VFL shows light at the far end, does that mean the fiber is good?",
+      "What wavelength does a VFL use and why visible light specifically?",
+      "Why is VFL useless for splice loss measurement?"
+    ]
+  },
+  {
+    "id": "tech-power-meter",
+    "round": "tech",
+    "topic": "Power Meter",
+    "text": "Explain dB versus dBm. Why does that distinction matter when you're computing a link's loss budget?",
+    "difficulty": "fundamentals",
+    "timeHint": "~2 min",
+    "strongAnswer": "dBm is an absolute power level — logarithmic, referenced to 1 mW. 0 dBm = 1 mW, -10 dBm = 0.1 mW, -30 dBm = 1 microwatt (typical receiver sensitivity). dB is a ratio — a measure of loss or gain. 3 dB loss means half the power; 10 dB loss means a tenth. The distinction matters for a link budget because: TX output is in dBm (absolute), RX sensitivity is in dBm (absolute), and the loss budget between them is in dB (difference). Example: TX outputs 0 dBm, RX works down to -20 dBm, so the budget is 20 dB. If my measured insertion loss is 22 dB, the link will fail because I'm 2 dB over budget.",
+    "probing": [
+      "If you measure 0 dBm at the TX and -8 dBm at the RX, what's the loss?",
+      "Why is the math logarithmic — why not just use milliwatts?",
+      "Two patch cords each have 0.5 dB insertion loss — what's the total loss?"
+    ]
+  },
+  {
+    "id": "tech-dns-dhcp",
+    "round": "tech",
+    "topic": "DNS / DHCP",
+    "text": "Walk me through DHCP DORA. What happens if no DHCP server responds?",
+    "difficulty": "fundamentals",
+    "timeHint": "~2 min",
+    "strongAnswer": "DORA: Discover, Offer, Request, Acknowledge. Client broadcasts a DHCPDISCOVER on the local subnet. One or more servers reply with a DHCPOFFER containing a candidate IP and lease parameters. Client picks one and sends a DHCPREQUEST identifying its choice. Server sends DHCPACK confirming the lease. If no server responds, the client typically falls back to APIPA (Automatic Private IP Addressing) — a 169.254.x.x address — which lets it talk to other APIPA hosts on the same segment but not route off-segment. Lease durations are usually 24 hours; the client tries to renew at 50% with the original server (unicast), then broadcasts to any server at 87.5%.",
+    "probing": [
+      "What's a DHCP relay agent and when do you need one?",
+      "How does the client know which server's OFFER to pick if there are multiple?",
+      "What's the security risk of a rogue DHCP server on your LAN?"
+    ]
+  },
+  {
+    "id": "tech-linux-flow",
+    "round": "tech",
+    "topic": "Linux Troubleshooting",
+    "text": "A server has no network connectivity. Walk me through your Linux troubleshooting flow, command by command.",
+    "difficulty": "intermediate",
+    "timeHint": "~3 min",
+    "strongAnswer": "Bottom-up: (1) `ip a` — do I have an IP? If no, DHCP failed or interface is down. `ip link set eth0 up` if down. (2) `ip r` — do I have a default route? If no, routing problem. (3) `ping <gateway>` — can I reach L3 next hop? If no, it's an L1/L2 problem between me and the gateway. (4) `ping 8.8.8.8` — can I reach the internet by IP? If no but I can reach the gateway, the upstream path is broken. (5) `dig google.com` — does DNS resolve? If no, check `/etc/resolv.conf` and the configured DNS server. (6) `traceroute google.com` or better `mtr 8.8.8.8` — where does the path die? Also useful: `ethtool eth0` for physical link state (speed, duplex, carrier); `journalctl -u network` or `systemd-networkd` logs for recent failures; `ss -tlnp` for what's listening.",
+    "probing": [
+      "What does `mtr` show you that `traceroute` doesn't?",
+      "If `ethtool` says the link is at 100/half instead of 1000/full, what does that tell you?",
+      "How would you capture traffic to debug an intermittent issue?"
+    ]
+  },
+  {
+    "id": "tech-rack-safety",
+    "round": "tech",
+    "topic": "Rack & Safety",
+    "text": "You and a teammate need to lift a 60-pound switch into a 38U rack position. Walk me through the safe procedure.",
+    "difficulty": "fundamentals",
+    "timeHint": "~2 min",
+    "strongAnswer": "60 lbs is over the 40 lb solo limit, so this is a mandatory group lift. Pre-lift: check the path is clear, the rails are installed at the target U, the cable management arm is positioned out of the way. PPE: safety glasses, closed-toe shoes, gloves if there are sharp edges. Communication: agree on count (ready, set, lift) and a verbal cue if either of us needs to stop. Technique: feet shoulder-width, knees bent, back straight, lift with legs. Place the switch on the rails together. If 38U is overhead, consider a lift assist — a ladder with a platform — rather than overhead-lifting from the floor. Secure with all four rack screws before letting go. Document the install ticket with any anomalies.",
+    "probing": [
+      "What if the rails were installed incorrectly and the switch doesn't seat?",
+      "What's the procedure if one of you starts losing grip mid-lift?",
+      "Why does the hot-aisle/cold-aisle orientation matter for where you install the switch?"
+    ]
+  },
+  {
+    "id": "tech-sop",
+    "round": "tech",
+    "topic": "SOPs / Documentation",
+    "text": "What's in a good SOP? Tell me about one you've written or used.",
+    "difficulty": "fundamentals",
+    "timeHint": "~2 min",
+    "strongAnswer": "A good SOP has: title, version, last-updated date, author; purpose (when to use this SOP and when NOT to); pre-checks (what must be true before starting); numbered, atomic steps each with a per-step verification ('expected output'); a rollback procedure for when step N fails; and a sign-off section. Example from my own experience: when I built the 3D print pre-flight checklist at Pace, the SOP had: when to use (any print over 60 minutes), pre-checks (bed leveled, nozzle profile matches filament), steps (run first-layer test square, verify adhesion, confirm support placement, start print), rollback (cancel if first layer warps; re-level bed; restart). The discipline came from realizing that printed instructions get ignored — atomic verification per step is what actually changes behaviour.",
+    "probing": [
+      "What's the difference between an SOP and a runbook?",
+      "Who should review an SOP before it's adopted?",
+      "How do you keep an SOP from becoming outdated?"
+    ]
+  },
+  {
+    "id": "r1-warmup",
+    "round": "r1",
+    "lp": "Opening / Background",
+    "text": "Walk me through your background — start wherever you'd like.",
+    "difficulty": "friendly",
+    "timeHint": "~90s",
+    "strongAnswer": "Use the 60-second 'Why The Switch' opener verbatim. Engineer who switched from rocks to networks. KNUST geological engineering BS — field instruments, safety-critical environments, root-cause discipline. Pace MS in CS, GPA 3.86. Five certs in 12 months (Linux Essentials, Linux Security Essentials, Google Cybersecurity, NVIDIA Deep Learning, Security+). Two micro-internship projects: anomaly detection on financial fraud, Linux network IR lab. Close with: 'Deploy Tech is where the two worlds meet — hands on the cable, instruments in hand, and because I'm Linux/security too, I can troubleshoot what I deploy, not just deploy it.'",
+    "probing": [
+      "Why the switch from geological engineering — what was the moment you decided?",
+      "What's the hardest thing about going from a non-CS background into a CS Master's?",
+      "Why Amazon specifically?"
+    ]
+  },
+  {
+    "id": "r1-customer-1",
+    "round": "r1",
+    "lp": "Customer Obsession",
+    "text": "Tell me about a time you went above and beyond for a customer.",
+    "difficulty": "friendly",
+    "timeHint": "~90s",
+    "strongAnswer": "Use story 1.A (National Grid phishing-target caller). Situation: elderly customer who'd just been scammed by someone impersonating National Grid. Task: script said log dispute and escalate; that didn't address the risk of a second scam call. Action: did both the script AND walked her through recognition cues, offered to set a verbal account passphrase. Documented per PCI DSS. Result: customer went from 'I'm done with you' to thanking by name; flagged pattern to team lead; passphrase offer became standard playbook step after similar calls.",
+    "probing": [
+      "What did you sacrifice to do this?",
+      "How did you measure that the customer was actually better off?",
+      "Did you have authority to offer the passphrase, or did you stretch?"
+    ]
+  },
+  {
+    "id": "r1-ownership-1",
+    "round": "r1",
+    "lp": "Ownership",
+    "text": "Tell me about a time you took ownership of something nobody officially asked you to.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 2.A (SRC VP COVID coordination). Situation: KNUST closed campus suddenly in March 2020; 60,000+ students displaced; admin team triaging a hundred fires; no one aggregating student questions. Task: provide a single coordinated voice. Action: built central intake form, batched questions by category, ran daily sync with admin response team, personally pushed for emergency housing for stranded international students. Result: semester held (no involuntary withdrawals), housing arranged for stranded students, 200+ questions handled in first 10 days, dean's office cited it as the smoothest crisis-comms loop they'd had.",
+    "probing": [
+      "What would have happened if you hadn't stepped in?",
+      "What did you personally own versus the SRC team as a whole?",
+      "What did you get wrong?"
+    ]
+  },
+  {
+    "id": "r1-learn-1",
+    "round": "r1",
+    "lp": "Learn & Be Curious",
+    "text": "How do you stay current on technology? Tell me about something you taught yourself recently that wasn't required.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 4.B (Suricata + MITRE for IR Lab). The lab's scope was 'use Linux and Wireshark'. I taught myself Suricata (IDS rule syntax, deployment modes) over a weekend, and learned the relevant MITRE ATT&CK techniques — specifically T1071 (Application Layer Protocol) for C2 traffic — to structure mitigation recommendations against a real framework. The project came out tighter than scope and trained me on tools I now use as standard. Be honest about gaps: didn't learn Suricata performance tuning or FP triage at scale, but I can read the docs and name what I haven't touched.",
+    "probing": [
+      "What's the next thing on your list to learn?",
+      "What did you NOT learn that you wish you had?",
+      "How do you decide what's worth your time?"
+    ]
+  },
+  {
+    "id": "r1-trust-1",
+    "round": "r1",
+    "lp": "Earn Trust",
+    "text": "Tell me about a time you had to deliver feedback or news that was hard for someone to hear.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 3.A (walking back SRC's over-promise to admin). Two weeks into COVID response, SRC had publicly committed to remote-class tech support we couldn't deliver at the volume. Action: in the next admin sync, opened with 'we committed to coverage we cannot actually deliver — I want to retract it and propose a narrower scope.' Proposed a daily window and intake form. Result: admin appreciated the candour; narrower commitment was actually delivered; trust deposited that day made every subsequent ask easier. Frame as Earn Trust: trust came from saying the awkward thing out loud, at short-term cost to my own credibility.",
+    "probing": [
+      "What did you risk by saying that out loud?",
+      "Why didn't you just quietly under-deliver and hope no one noticed?",
+      "What feedback did you get afterward?"
+    ]
+  },
+  {
+    "id": "r1-deliver-1",
+    "round": "r1",
+    "lp": "Deliver Results",
+    "text": "Tell me about a specific goal you set for yourself and how you delivered on it.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 8.A (100% real-time alerting on IR Lab). Set the metric at the start — every predefined anomaly must trigger an alert in real time, not batch. Built a Python streaming alerter that tailed simulated logs, matched compiled regex, emitted alerts immediately with pattern + timestamp + source. Instrumented with a self-test that fired a synthetic anomaly at start. Result: hit 100% real-time on the defined set; sub-second detection latency; self-test caught two of my own bugs that would have shipped silently. Honest gap: should have set up self-test on day one, not day five.",
+    "probing": [
+      "Show me the math — what was your real-time latency?",
+      "What anomalies WOULDN'T your system catch?",
+      "What was the hardest setback and how did you push through?"
+    ]
+  },
+  {
+    "id": "r1-deep-1",
+    "round": "r1",
+    "lp": "Dive Deep",
+    "text": "Tell me about a time you went into the details on a problem most people would have let go.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 5.A (accuracy was lying on fraud detection). Baseline Isolation Forest model reported 99% accuracy. Suspiciously high. Went into the confusion matrix — the model was correctly classifying nearly all legitimate transactions and missing most fraud. Because the data was 99% legit, a model that always said 'legit' would still hit 99% accuracy. Rebuilt evaluation around F1 and minority-class recall, did stratified sampling, engineered features for fraud signatures. New evaluation immediately exposed baseline weakness. Writeup explicitly called out the accuracy-vs-recall trap.",
+    "probing": [
+      "Walk me through what F1 actually is.",
+      "Why did you trust the accuracy number in the first place?",
+      "What's the next thing you'd dive into on this dataset?"
+    ]
+  },
+  {
+    "id": "r1-action-1",
+    "round": "r1",
+    "lp": "Bias for Action",
+    "text": "Tell me about a time you had to act with limited information.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 6.B (COVID intake without committee). First three days of KNUST shutdown, 12 student rep channels all emailing admin separately with overlapping questions. Could have waited for SRC exec committee approval (monthly cadence) or stood up a centralized intake unilaterally. Built it: Google Form, daily sync with admin, notified SRC president same day with explicit off-switch. He backed it. 200+ questions captured in 10 days. The structure deliberately left him the off-switch — that's the difference between Bias for Action and unilateral cowboy work.",
+    "probing": [
+      "What information did you not have when you made the call?",
+      "What if your SRC president had told you to shut it down?",
+      "How is this different from just freelancing?"
+    ]
+  },
+  {
+    "id": "r1-tech-blend",
+    "round": "r1",
+    "lp": "Technical Blend",
+    "text": "Walk me through how you'd troubleshoot a 10G fiber link that's negotiating only at 1G.",
+    "difficulty": "intermediate",
+    "timeHint": "~3 min",
+    "strongAnswer": "Auto-negotiation falling back to 1G usually means one side can't sustain 10G — physical media, transceiver, or port. Flow: (1) `ethtool eth0` on the Linux side to confirm advertised + actual speed and the auto-neg state. (2) Check the transceivers on both ends — are they both rated for 10G and matched to the fiber type (SMF vs MMF, wavelength)? (3) Check the patch cord — wrong fiber class (OM2 instead of OM4) won't support 10G at distance. (4) Power meter the link — if loss exceeds budget, the receiver can't decode 10G signaling. (5) Check switch port config — is it hard-coded to 1G somewhere? Common quick wins: swap the transceiver, swap the patch cord. Both are cheap tests before going to the OTDR.",
+    "probing": [
+      "What's the OM4 distance budget at 10G?",
+      "If both transceivers say 10G and ethtool says auto-neg, where would you look next?",
+      "How would you verify it's the optical path versus the SerDes on the NIC?"
+    ]
+  },
+  {
+    "id": "r2-customer-2",
+    "round": "r2",
+    "lp": "Customer Obsession",
+    "text": "Tell me about a time a customer didn't know what they actually needed. What did you do?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 1.A reframed — the elderly caller thought she needed to dispute a payment. What she actually needed was protection from the next scam call. I delivered both: logged the dispute (what she asked for) AND offered the verbal account passphrase (what she actually needed). Frame: working backwards from the actual need, not the stated request, is the core of Customer Obsession. Be careful not to be condescending — the customer is the authority on their experience; you're the authority on your domain.",
+    "probing": [
+      "How do you tell the difference between 'customer wrong' and 'customer right, I'm missing context'?",
+      "What if they push back when you suggest something they didn't ask for?",
+      "Give me a counter-example — a time you assumed they didn't know and you were wrong."
+    ]
+  },
+  {
+    "id": "r2-ownership-2",
+    "round": "r2",
+    "lp": "Ownership",
+    "text": "Tell me about a time you owned something outside your formal lane. What pushback did you get?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 2.B (Anomaly Detection F1 reframe beyond brief). Assignment was accuracy; the data needed F1/recall framing. Rebuilt evaluation, engineered features, wrote up the trap so the reader couldn't be misled. Pushback: the instructor could have marked me down for scope creep. Honest gap: should have raised the metric issue BEFORE submitting to confirm I wasn't surprising the grader. Better practice is to surface the disagreement first. The Ownership move was delivering what was useful, not just what was asked.",
+    "probing": [
+      "What's the smallest version of this story that would still count as Ownership?",
+      "What if the instructor had told you to stay in scope?",
+      "How do you know when to ask permission versus when to act?"
+    ]
+  },
+  {
+    "id": "r2-learn-2",
+    "round": "r2",
+    "lp": "Learn & Be Curious",
+    "text": "Tell me about a topic you initially got wrong, and how you eventually figured it out.",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 5.A (trusting accuracy on imbalanced data). Initial mistake: trusted the 99% accuracy headline emotionally even though I knew about class imbalance in theory. Resolution: forced myself to look at the confusion matrix, which immediately exposed the gap. The lesson was visceral — never trust a single-number summary on a classification problem without looking at the matrix. Now it's the first thing I check, not the last. Be honest: I'd read about it; reading isn't internalizing; the project made me feel the trap.",
+    "probing": [
+      "What other 'I read about it but didn't get it' topics do you have?",
+      "How do you actually internalize technical knowledge — what's your process?",
+      "Tell me a time you got something wrong and DIDN'T figure it out — that's actually more interesting."
+    ]
+  },
+  {
+    "id": "r2-trust-2",
+    "round": "r2",
+    "lp": "Earn Trust",
+    "text": "Tell me about a time you had to publicly admit you were wrong about something. What happened next?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 3.A (SRC over-promise walkback). I had pushed for the over-commitment publicly. Walking it back meant the SRC looked weaker and I personally took the credibility hit. Frame the consequence carefully: short-term cost was real (admin saw me as wrong on the original call); long-term value was that subsequent asks landed better because trust had been deposited. Bridge to LP: vocally self-critical is the LP language. The trust came from saying the awkward thing.",
+    "probing": [
+      "Walk me through what changed in your relationship with the dean after that.",
+      "What if the dean had used it against the SRC politically?",
+      "Have you ever NOT walked back a commitment when you should have?"
+    ]
+  },
+  {
+    "id": "r2-deliver-2",
+    "round": "r2",
+    "lp": "Deliver Results",
+    "text": "Tell me about a time you missed a goal. What did you do?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 8.B (60K-student deliverables). I set three concrete deliverables during COVID — semester held, remote-learning option per student, 48-hour housing for stranded internationals. Hit (1) cleanly. Hit (2) at the policy level but NOT at the delivery level — students without home internet got policy commitment, not actual infrastructure. Hit (3) only for students who reached the intake channel; we likely missed some we didn't surface in time. Score the partial: ~60% of the bar on deliverable two. Honest gap: should have made 'delivery, not just policy' an explicit sub-metric from the start.",
+    "probing": [
+      "Pick the deliverable you most under-delivered on and tell me exactly what you'd do differently.",
+      "Did you have authority to over-correct, or were you blocked?",
+      "How did you communicate the miss to the people depending on you?"
+    ]
+  },
+  {
+    "id": "r2-deep-2",
+    "round": "r2",
+    "lp": "Dive Deep",
+    "text": "Tell me about a metric that was telling you a misleading story. How did you find out?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Same source as 5.A but emphasize the FINDING-OUT process: the 99% accuracy felt too good given how hard fraud detection actually is. That feeling — gut versus data — is exactly what Amazon says Dive Deep is about. I looked at the confusion matrix because the metric and the difficulty didn't match. The detail under the surface number — 'predicts everything as legit' — was completely different from the headline. The fix wasn't smarter modeling; the fix was a better metric.",
+    "probing": [
+      "What's the shortest amount of time you'd give a metric before being suspicious?",
+      "If your gut and the data disagreed in the opposite direction — gut says fine, data says alarm — what would you do?",
+      "Have you ever gone deep on something and found nothing? Talk me through that."
+    ]
+  },
+  {
+    "id": "r2-action-2",
+    "round": "r2",
+    "lp": "Bias for Action",
+    "text": "Tell me about a fast decision you made that was later proved wrong. What did you learn?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use a calibrated story — pulling from honest gaps in your other stories. Example from story 2.A: in the COVID coordination, I didn't escalate the international-student housing crisis fast enough — tried to source housing privately because I didn't want to over-claim admin attention. That cost two days. With students sleeping on couches, two days mattered. Lesson: when people are stranded, loud-and-immediate beats quiet-and-thorough. I'm faster about that now. Frame: Bias for Action without recalibration when you're wrong is just impulsiveness.",
+    "probing": [
+      "If you could replay it, what specifically would you do differently?",
+      "How do you decide when 'fast' is the right call versus 'gather more info'?",
+      "What was the cost of the delay in real terms?"
+    ]
+  },
+  {
+    "id": "r2-standards-2",
+    "round": "r2",
+    "lp": "Highest Standards",
+    "text": "When have you had to raise the bar on a team or process that didn't want it raised?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 7.A (3D print pre-flight gate). Lab norm was 'ship it, deadline's up.' I introduced a pre-flight review gate for prints over 60 minutes. Two students initially pushed back — wanted to skip the gate. I let one of them; that print failed at 80% completion. Sometimes the bar gets ratified by a costly demonstration of skipping it. Failure rate went from ~30% to under 10% within two weeks. Be careful: not 'I forced higher standards on people who resisted'; rather 'I held the bar, let one person test it, and the test ratified the bar.'",
+    "probing": [
+      "What if the failed print had been on a tighter deadline — would you still have let them skip?",
+      "How do you separate 'standards' from 'preferences' — your bar versus the right bar?",
+      "What did you NOT raise the bar on, deliberately, and why?"
+    ]
+  },
+  {
+    "id": "r3-deep-3",
+    "round": "r3",
+    "lp": "Dive Deep + Self-Critique",
+    "text": "Pick the story you're proudest of. Now tell me everything you got wrong.",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Pick story 2.A (SRC COVID coordination). Now go directly to the gaps: (1) Treated the intake channel as my creation — didn't document it well enough that someone else could run it. It didn't survive past my term. (2) Initial delay escalating the international-student housing crisis — tried to source housing privately first, cost two days. (3) The remote-learning deliverable landed as policy, not delivery — students without home internet got commitment, not infrastructure. (4) Probably missed stranded students who didn't surface through the intake channel. The pride is real; the gaps are also real. Both can be true. This pre-empts the Bar Raiser's gotcha — they want you vocally self-critical (Earn Trust language), and giving them honest gaps before they pull them out of you flips the dynamic.",
+    "probing": [
+      "Of those gaps, which one do you think reflects a pattern in how you work?",
+      "If you had one more month, which one would you have closed?",
+      "What did you not learn from this experience that you wish you had?"
+    ]
+  },
+  {
+    "id": "r3-deliver-3",
+    "round": "r3",
+    "lp": "Deliver Results",
+    "text": "Tell me about the most ambitious thing you've ever shipped. Don't tell me about the success — tell me about what it cost you to get there.",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Pick the MS-while-working-and-certifying journey (story 4.A and 7.B combined). The output: 3.86 GPA, 5 certs, 2 projects, while working part-time. The cost: missed social events, very compressed sleep on cert weeks, two relationships strained by available-time scarcity, periods where I was stitching deep-learning math at 11pm after a customer service shift. Be honest about whether it was worth it — say yes, because it puts me in this conversation, but acknowledge the cost is real. Bar Raisers respect candor about cost more than they respect superhuman framings. The point isn't 'I'm tireless'; it's 'I made the trade deliberately and I can articulate it.'",
+    "probing": [
+      "Would you make that trade again?",
+      "What's the cost you didn't see at the time that you see now?",
+      "How do you know when ambition crosses into self-harm?"
+    ]
+  },
+  {
+    "id": "r3-trust-3",
+    "round": "r3",
+    "lp": "Earn Trust",
+    "text": "Tell me about a time you withheld information from someone you should have told. Why?",
+    "difficulty": "hostile",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 3.B reframed — I waited two days before flagging the National Grid script compliance gap. The reason was honest: I was new, nervous about being seen as second-guessing the playbook. Those two days were withholding. In an actual compromise scenario, two days matter. The strong move is naming why I delayed — not bravery, not workload — fear of being seen wrong as a new rep. That's Earn Trust language: vocally self-critical, even when awkward. The fix wasn't 'be braver'; it was 'verify in a half-day, escalate same day if confirmed.'",
+    "probing": [
+      "What would have happened if you'd waited a week instead of two days?",
+      "Have you ever withheld something and gotten away with it?",
+      "How do you train yourself out of that hesitation pattern?"
+    ]
+  },
+  {
+    "id": "r3-standards-3",
+    "round": "r3",
+    "lp": "Highest Standards",
+    "text": "Tell me about a time your standards cost the team time. Was it worth it?",
+    "difficulty": "hostile",
+    "timeHint": "~2 min",
+    "strongAnswer": "Use story 7.A (3D print gate). Two students missed an internal milestone in week one because the gate slowed them. Was it worth it? Yes — failure rate dropped from ~30% to under 10%, and after week two students started prints earlier, so the gate lifted the planning timeline, not the print timeline. Be careful not to claim the cost was free — admit week-one cost was real. Frame the worth: time saved on re-prints + time lost from missed deadlines = net positive after the planning behaviour shifted.",
+    "probing": [
+      "How would you have known if the answer was 'no, it wasn't worth it'?",
+      "What if a third student had failed AFTER the gate was in place — would you have changed the gate?",
+      "When do you abandon a standard you've been holding?"
+    ]
+  },
+  {
+    "id": "r3-action-3",
+    "round": "r3",
+    "lp": "Bias for Action",
+    "text": "Tell me about the riskiest call you've made. Walk me through what would have happened if it had blown up.",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Use story 6.A (catching the phisher mid-call at National Grid). The risk: I acted on signals, not proof. If they'd been a real customer in a bad mood, my verification-only mode would have looked rude or accusatory. The downside was bounded — they'd have a worse customer experience but I didn't accuse them. The upside — closing a recon attempt — was worth that bounded downside. Calibrated risk-taking, not cowboy. The blow-up scenario: customer escalates to my supervisor about being treated as a fraud suspect; I'd own it, explain the signals I'd seen, and accept the coaching. The risk was bounded specifically because I didn't accuse.",
+    "probing": [
+      "Walk me through the worst plausible outcome.",
+      "How do you tell the difference between calibrated risk and recklessness?",
+      "If your manager had told you afterward 'don't ever do that again,' what would you have said?"
+    ]
+  },
+  {
+    "id": "r3-customer-4",
+    "round": "r3",
+    "lp": "Customer Obsession",
+    "text": "Tell me about a customer you failed. Specifically. What did they want, what did they get, why was there a gap?",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Be honest. From 8.B: stranded students who didn't surface through the SRC intake channel got nothing — we couldn't help students we didn't know about. What they wanted: someone to find them. What they got: silence, because our discovery mechanism was passive. The gap: I built an intake form but didn't have an outreach mechanism. Better practice would have been to push rep networks to door-knock dormitories. We optimized for incoming volume, not for discovery. Frame: failure is the LP test. A real customer-obsessed person can name who they failed and why. Don't manufacture a tidy resolution; the value is in being able to identify the gap.",
+    "probing": [
+      "How many students do you think you missed? Estimate.",
+      "What would have made you find them?",
+      "Have you applied this lesson since?"
+    ]
+  },
+  {
+    "id": "r3-ownership-4",
+    "round": "r3",
+    "lp": "Ownership",
+    "text": "Tell me about something you should have owned but didn't. Why didn't you?",
+    "difficulty": "hostile",
+    "timeHint": "~2 min",
+    "strongAnswer": "Pick honest gap from 5.A or 7.A. From 7.A: I should have institutionalized the 3D print gate so it survived past my TA term — I documented it on the wall but I didn't get it into the lab's official onboarding for the next TA. Why didn't I? Two honest reasons: (1) I assumed the new TA would inherit the practice by observation; that was magical thinking. (2) Institutionalizing it required getting time on the lab manager's calendar for an onboarding-doc update, which felt like more friction than I wanted. The truthful answer is friction-avoidance, not bigger forces. That self-honest framing is exactly what Earn Trust + Ownership wants together.",
+    "probing": [
+      "If you had to do this Amazon role for 5 years and only one thing survived past you, what would it be?",
+      "What's the pattern — when do you give up on Ownership at the institutional level?",
+      "How would you push past that friction next time?"
+    ]
+  },
+  {
+    "id": "r3-learn-4",
+    "round": "r3",
+    "lp": "Learn & Be Curious",
+    "text": "What's the most embarrassing knowledge gap you've had recently exposed?",
+    "difficulty": "hostile",
+    "timeHint": "~2 min",
+    "strongAnswer": "Be honest and specific. Pick something that's not catastrophic but is genuinely embarrassing — e.g., 'I assumed BGP and OSPF could be roughly substituted for each other before I really studied the difference. I knew the names; I didn't know that one is path-vector for the internet and one is link-state for inside an AS. That's a basic distinction I should have had earlier.' Then say what you did about it: read the relevant chapters, can now explain in 60 seconds. The Bar Raiser is testing whether you can be self-critical without performing self-criticism. Authentic > performative.",
+    "probing": [
+      "How recently?",
+      "What's a gap you haven't closed yet?",
+      "What's a topic you THINK you know that you're not actually sure about?"
+    ]
+  },
+  {
+    "id": "r3-deep-4",
+    "round": "r3",
+    "lp": "Dive Deep",
+    "text": "You've been talking about F1 score. Show me the math. What's precision, what's recall, why F1 and not accuracy?",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Precision = TP / (TP + FP) — of everything I flagged, how many were real. Recall = TP / (TP + FN) — of everything that was real, how many did I catch. F1 = harmonic mean = 2 * precision * recall / (precision + recall). Why harmonic mean: if either precision OR recall is near zero, F1 is near zero. Arithmetic mean would let one strong metric mask the other. Why F1 over accuracy on imbalanced data: accuracy = (TP + TN) / total — and on 99% imbalanced data, predicting the majority class for everything gives 99% accuracy while catching zero of the minority class. F1 forces honesty about both sides of the classification. This is a Bar Raiser favorite — they're testing whether you actually know the math or just the vocabulary.",
+    "probing": [
+      "If precision is 0.8 and recall is 0.2, what's F1? (Answer: ~0.32)",
+      "When would you optimize for precision over recall? Or vice versa?",
+      "What's F-beta and when would you use it?"
+    ]
+  },
+  {
+    "id": "r3-blend-3",
+    "round": "r3",
+    "lp": "Stacked Multi-LP",
+    "text": "Tell me a story where you demonstrated three of the Leadership Principles simultaneously.",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Pick story 2.A (SRC COVID). Demonstrates: (1) Ownership — took on something outside the formal VP role; (2) Bias for Action — moved before exec committee approval, with the SRC president's off-switch; (3) Deliver Results — converted squishy 'manage crisis' into three concrete deliverables and drove to them. After identifying the three, bridge each with one sentence connecting the action to the LP. The Bar Raiser is testing structural thinking — most candidates give a story and let the interviewer guess which LPs apply. Name them explicitly. Don't be afraid to also call out which LP it's WEAKEST on (e.g., 'this is not a great Customer Obsession story because the customers were inside the institution, not external').",
+    "probing": [
+      "Pick the LP you demonstrated most weakly in that story and tell me why.",
+      "Could the same story demonstrate Earn Trust? How?",
+      "Tell me a story that ONLY demonstrates one LP cleanly — no bleed."
+    ]
+  }
+]
