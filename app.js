@@ -557,47 +557,95 @@ function loadVoices() {
 }
 
 function pickBestVoice() {
+  const all = state.availableVoices;
+  // Tier 1: explicitly preferred high-quality voices
   const preferred = [
-    'Samantha (Premium)', 'Evan (Premium)', 'Ava (Premium)', 'Allison (Premium)',
-    'Samantha', 'Karen', 'Daniel',
+    'Evan (Enhanced)', 'Ava (Enhanced)', 'Samantha (Enhanced)',
+    'Noelle (Enhanced)', 'Zoe (Enhanced)', 'Reed (Enhanced)',
+    'Allison (Enhanced)', 'Susan (Enhanced)', 'Tom (Enhanced)',
+    'Evan (Premium)', 'Ava (Premium)', 'Samantha (Premium)',
+    'Evan', 'Ava', 'Samantha',
+    'Karen', 'Daniel', 'Moira',
     'Google US English',
     'Microsoft Aria Online (Natural) - English (United States)',
-    'Microsoft Jenny Online (Natural) - English (United States)',
   ];
   for (const name of preferred) {
-    const voice = state.availableVoices.find(v => v.name === name);
+    const voice = all.find(v => v.name === name);
     if (voice) return voice;
   }
-  return state.availableVoices.find(v => v.lang && v.lang.startsWith('en-US'))
-      || state.availableVoices.find(v => v.lang && v.lang.startsWith('en'))
-      || state.availableVoices[0];
+  // Tier 2: any Enhanced/Premium/Siri voice in English
+  const enhanced = all.find(v =>
+    /Enhanced|Premium|Siri|Natural/i.test(v.name) && v.lang && v.lang.startsWith('en')
+  );
+  if (enhanced) return enhanced;
+  return all.find(v => v.lang && v.lang.startsWith('en-US'))
+      || all.find(v => v.lang && v.lang.startsWith('en'))
+      || all[0];
 }
+
+const OPENAI_VOICES = [
+  ['openai:echo',    '🎙 OpenAI · Echo (warm, masculine)'],
+  ['openai:nova',    '🎙 OpenAI · Nova (friendly, bright)'],
+  ['openai:onyx',    '🎙 OpenAI · Onyx (deep, authoritative)'],
+  ['openai:shimmer', '🎙 OpenAI · Shimmer (soft, calm)'],
+  ['openai:alloy',   '🎙 OpenAI · Alloy (neutral)'],
+  ['openai:fable',   '🎙 OpenAI · Fable (expressive)'],
+];
 
 function populateVoiceDropdown() {
   const select = document.getElementById('voice-select');
   if (!select) return;
   const previous = select.value;
   select.innerHTML = '';
-  const enVoices = state.availableVoices.filter(v => v.lang && v.lang.startsWith('en'));
+
+  // System voices first (sorted: Enhanced/Premium on top)
+  const enVoices = state.availableVoices
+    .filter(v => v.lang && v.lang.startsWith('en'))
+    .slice()
+    .sort((a, b) => {
+      const aQ = /Enhanced|Premium|Siri|Natural/i.test(a.name) ? 0 : 1;
+      const bQ = /Enhanced|Premium|Siri|Natural/i.test(b.name) ? 0 : 1;
+      if (aQ !== bQ) return aQ - bQ;
+      return a.name.localeCompare(b.name);
+    });
   const best = pickBestVoice();
   enVoices.forEach(v => {
     const opt = document.createElement('option');
-    opt.value = v.name;
+    opt.value = `system:${v.name}`;
     const cloud = v.localService === false ? ' ☁️' : '';
-    opt.textContent = `${v.name} (${v.lang})${cloud}`;
+    const star = /Enhanced|Premium|Siri|Natural/i.test(v.name) ? ' ✨' : '';
+    opt.textContent = `${v.name} (${v.lang})${cloud}${star}`;
     select.appendChild(opt);
   });
-  if (previous && enVoices.find(v => v.name === previous)) {
+
+  // Separator
+  const sep = document.createElement('option');
+  sep.disabled = true;
+  sep.textContent = '──── cloud (needs OpenAI key) ────';
+  select.appendChild(sep);
+
+  // OpenAI options
+  OPENAI_VOICES.forEach(([val, label]) => {
+    const opt = document.createElement('option');
+    opt.value = val;
+    opt.textContent = label;
+    select.appendChild(opt);
+  });
+
+  // Default selection
+  const defaultValue = best ? `system:${best.name}` : (enVoices[0] ? `system:${enVoices[0].name}` : 'openai:echo');
+  if (previous && [...select.options].some(o => o.value === previous)) {
     select.value = previous;
-  } else if (best) {
-    select.value = best.name;
+  } else {
+    select.value = defaultValue;
   }
 }
 
-function getSelectedVoice() {
+function getSelectedSystemVoice() {
   const sel = document.getElementById('voice-select');
-  if (sel && sel.value) {
-    const v = state.availableVoices.find(x => x.name === sel.value);
+  if (sel && sel.value && sel.value.startsWith('system:')) {
+    const name = sel.value.replace('system:', '');
+    const v = state.availableVoices.find(x => x.name === name);
     if (v) return v;
   }
   return pickBestVoice();
@@ -609,10 +657,57 @@ function speakQuestion() {
   speak(text);
 }
 
-function speak(text) {
+async function speak(text) {
+  const sel = document.getElementById('voice-select');
+  const value = sel ? sel.value : '';
+
+  if (value && value.startsWith('openai:')) {
+    const voice = value.split(':')[1];
+    const ok = await speakWithOpenAI(text, voice);
+    if (ok) return;
+    // fall through to browser TTS if OpenAI failed
+  }
+  speakWithBrowserTTS(text);
+}
+
+async function speakWithOpenAI(text, voice) {
+  try {
+    const token = await getIdToken();
+    const processed = preprocessForTTS(text);
+    const resp = await fetch(COACH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: 'tts',
+        text: processed,
+        voice,
+        tone: state.tone,
+      }),
+    });
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      console.warn('OpenAI TTS failed, falling back to browser TTS:', err);
+      return false;
+    }
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.onended = () => URL.revokeObjectURL(url);
+    await audio.play();
+    return true;
+  } catch (e) {
+    console.warn('OpenAI TTS exception, falling back:', e);
+    return false;
+  }
+}
+
+function speakWithBrowserTTS(text) {
   const processed = preprocessForTTS(text);
   const utt = new SpeechSynthesisUtterance(processed);
-  const voice = getSelectedVoice();
+  const voice = getSelectedSystemVoice();
   if (voice) utt.voice = voice;
   if (state.tone === 'skeptical') {
     utt.rate = 1.0; utt.pitch = 0.85;
