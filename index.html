@@ -14,6 +14,9 @@
 </head>
 <body>
 
+<!-- COUNTDOWN RIBBON (visible on post-login screens in Training mode) -->
+<div class="countdown-ribbon gamified" id="countdown-ribbon" hidden></div>
+
 <!-- LOADING SPLASH -->
 <div class="screen" id="screen-loading">
   <div class="card center">
@@ -34,6 +37,7 @@
       </svg>
       Continue with GitHub
     </button>
+    <p class="identity-mantra gamified">You're an engineer who switched from rocks to networks. You belong in this room.</p>
     <p class="muted small">Only authorized accounts can access this tool.</p>
     <p class="error" id="login-error" hidden></p>
   </div>
@@ -47,6 +51,51 @@
     <p class="subtitle">The GitHub account <strong id="denied-user">—</strong> isn't on the access list.</p>
     <button class="btn-secondary" id="signout-btn-denied">Sign out</button>
   </div>
+</div>
+
+<!-- HOME SCREEN (Training mode default; Calm mode skips this) -->
+<div class="screen gamified" id="screen-home" hidden>
+  <header class="top-bar">
+    <div class="brand-text">YN Prep</div>
+    <div class="user-pill">
+      <img id="user-avatar-home" alt="" hidden>
+      <span id="user-name-home">—</span>
+      <button class="icon-btn" id="open-settings-home" aria-label="Settings">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19.43 12.98a7.46 7.46 0 0 0 0-1.96l2.11-1.65a.5.5 0 0 0 .12-.64l-2-3.46a.5.5 0 0 0-.61-.22l-2.49 1a7.32 7.32 0 0 0-1.7-.98l-.38-2.65a.5.5 0 0 0-.49-.42h-4a.5.5 0 0 0-.49.42l-.38 2.65a7.32 7.32 0 0 0-1.7.98l-2.49-1a.5.5 0 0 0-.61.22l-2 3.46a.5.5 0 0 0 .12.64l2.11 1.65a7.46 7.46 0 0 0 0 1.96l-2.11 1.65a.5.5 0 0 0-.12.64l2 3.46a.5.5 0 0 0 .61.22l2.49-1c.51.39 1.07.72 1.7.98l.38 2.65c.04.24.25.42.49.42h4c.24 0 .45-.18.49-.42l.38-2.65a7.32 7.32 0 0 0 1.7-.98l2.49 1a.5.5 0 0 0 .61-.22l2-3.46a.5.5 0 0 0-.12-.64l-2.11-1.65zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="container home-main">
+    <section class="confidence-card">
+      <div class="section-label">Confidence Score</div>
+      <div class="confidence-number" id="confidence-number">—</div>
+      <div class="confidence-trend" id="confidence-trend"></div>
+      <button class="link-btn confidence-detail-btn" id="confidence-detail-btn">Show breakdown ▾</button>
+      <div class="confidence-breakdown" id="confidence-breakdown" hidden></div>
+    </section>
+
+    <section class="mission-card">
+      <div class="section-label">Today's Mission</div>
+      <h2 class="mission-title" id="mission-title">—</h2>
+      <p class="mission-desc" id="mission-desc"></p>
+      <button class="submit-btn mission-begin" id="mission-begin">Begin mission →</button>
+    </section>
+
+    <section class="mastery-card">
+      <div class="section-label">LP Mastery</div>
+      <div class="mastery-grid" id="mastery-grid"></div>
+    </section>
+
+    <section class="streak-card">
+      <span class="streak-num" id="streak-num">No streak yet</span>
+      <span class="streak-last" id="streak-last">No reps yet</span>
+    </section>
+
+    <div class="home-footer">
+      <button class="link-btn" id="goto-tracks">All tracks →</button>
+    </div>
+  </main>
 </div>
 
 <!-- TRACK PICKER -->
@@ -178,6 +227,11 @@
       </div>
       <h2 class="question-text" id="q-text">Loading question…</h2>
 
+      <details class="intent-reveal" id="intent-reveal">
+        <summary><span class="intent-target">🎯</span> What's this testing?</summary>
+        <div class="intent-content" id="intent-content">Tap to load the preview.</div>
+      </details>
+
       <div class="action-row">
         <button class="action-btn" id="speak-q">
           <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.23v2.06A6.99 6.99 0 0 1 19 12a6.99 6.99 0 0 1-5 6.71v2.06A9 9 0 0 0 14 3.23z"/></svg>
@@ -226,7 +280,8 @@
 
       <div class="chat-prompts" id="chat-prompts" hidden>
         <button class="chip" data-prompt="Cut my answer down to under 90 seconds. Keep the strongest moments, drop the rambling. Give me the trimmed version I can speak almost verbatim.">✂️ Trim to 90 sec</button>
-        <button class="chip" data-prompt="Make my answer punchier. Sharper verbs, tighter sentences, lead with the result. Rewrite it for me.">⚡ Make it punchier</button>
+        <button class="chip" data-prompt="Make my answer punchier. Sharper verbs, tighter sentences, lead with the result. Rewrite it for me.">⚡ Punchier</button>
+        <button class="chip" data-prompt="Rewrite my answer with humanity — add one teammate or customer name, one moment of warmth or honest self-awareness, one specific reaction or quote. Keep it speakable.">💛 Add humanity</button>
         <button class="chip" data-prompt="Give me a stronger version of my answer I can speak almost verbatim.">✨ Stronger version</button>
         <button class="chip" data-prompt="What would a Bar Raiser ask to try to break this answer?">🔥 Bar Raiser probes</button>
         <button class="chip" data-prompt="What's the one quantifiable detail I should add?">📊 Add a number</button>
@@ -263,6 +318,15 @@
     </div>
 
     <div class="drawer-group">
+      <label>Mode</label>
+      <div class="seg-control mode-control">
+        <button data-mode="training" class="active" id="mode-training">Training</button>
+        <button data-mode="calm" id="mode-calm">Calm</button>
+      </div>
+      <div class="mode-hint" id="mode-hint">Daily mission, confidence score, and mastery layers on.</div>
+    </div>
+
+    <div class="drawer-group">
       <label>Voice</label>
       <select id="voice-select"></select>
       <button class="link-btn" id="test-voice">Test the selected voice</button>
@@ -287,6 +351,21 @@
     </div>
   </div>
 </aside>
+
+<!-- PRE-SESSION BRIEF MODAL -->
+<div class="modal-overlay" id="brief-modal" hidden>
+  <div class="modal-card">
+    <div class="brief-header">
+      <div class="section-label" id="brief-track-label">—</div>
+      <button class="icon-btn" id="close-brief" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+    <h2 class="brief-title" id="brief-title">Get ready</h2>
+    <div class="brief-content" id="brief-content">Loading…</div>
+    <button class="submit-btn" id="begin-from-brief">Begin →</button>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

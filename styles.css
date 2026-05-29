@@ -756,6 +756,275 @@ button {
   color: var(--text-muted);
 }
 
+/* ============ COUNTDOWN RIBBON ============ */
+.countdown-ribbon {
+  background: linear-gradient(90deg, var(--accent-bg), var(--bg-soft), var(--accent-bg));
+  color: var(--accent);
+  text-align: center;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .015em;
+  border-bottom: 1px solid var(--accent-soft);
+  animation: fade-in 320ms ease;
+}
+
+/* ============ IDENTITY MANTRA ============ */
+.identity-mantra {
+  font-size: 13px;
+  font-style: italic;
+  color: var(--accent);
+  text-align: center;
+  margin: 22px 0 14px;
+  line-height: 1.55;
+  padding: 0 6px;
+}
+
+/* ============ HOME SCREEN ============ */
+.home-main { padding: 36px 24px 80px; max-width: 720px; }
+.confidence-card,
+.mission-card,
+.mastery-card,
+.streak-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.confidence-card { text-align: center; padding: 32px 24px; }
+.confidence-number {
+  font-size: 60px;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  color: var(--accent);
+  line-height: 1;
+  margin: 10px 0 8px;
+}
+.confidence-number .denom { font-size: 22px; color: var(--text-muted); font-weight: 500; margin-left: 6px; }
+.confidence-trend {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  min-height: 18px;
+}
+.confidence-trend.up { color: var(--accent2); }
+.confidence-detail-btn {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  width: auto;
+  display: inline-block;
+  padding: 4px 8px;
+  text-align: center;
+}
+.confidence-breakdown {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.breakdown-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 0;
+}
+.breakdown-row .name { color: var(--text-muted); }
+.breakdown-row .val { font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.mission-card .mission-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 8px 0 8px;
+  letter-spacing: -.015em;
+  color: var(--text);
+}
+.mission-card .mission-desc {
+  color: var(--text-soft);
+  font-size: 15px;
+  margin: 0 0 18px;
+  line-height: 1.55;
+}
+.mission-begin {
+  padding: 14px 22px !important;
+  font-size: 15px !important;
+}
+
+.mastery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+.mastery-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: background 150ms, border-color 150ms;
+}
+.mastery-item:hover { background: var(--bg-soft); border-color: var(--accent-soft); }
+.mastery-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 2px solid var(--border-strong);
+  background: transparent;
+}
+.mastery-dot.warm { background: #fcd34d; border-color: #f59e0b; }
+.mastery-dot.sharp { background: var(--accent); border-color: var(--accent); }
+.mastery-dot.reflexive {
+  background: radial-gradient(circle, #fde68a 30%, var(--accent) 100%);
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(234,88,12,.4);
+}
+.mastery-text { min-width: 0; flex: 1; }
+.mastery-name {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 500;
+  line-height: 1.25;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mastery-tier {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.streak-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 16px 22px;
+}
+.streak-num { color: var(--text); font-weight: 600; }
+.streak-last { color: var(--text-muted); }
+
+.home-footer {
+  display: flex;
+  justify-content: center;
+  padding: 14px 4px 0;
+}
+.home-footer .link-btn {
+  width: auto;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ============ INTENT REVEAL ============ */
+.intent-reveal {
+  background: var(--bg-card);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+  margin-bottom: 22px;
+  overflow: hidden;
+}
+.intent-reveal summary {
+  padding: 11px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: color 180ms;
+}
+.intent-reveal summary::-webkit-details-marker { display: none; }
+.intent-reveal:hover summary { color: var(--accent); }
+.intent-reveal[open] summary {
+  border-bottom: 1px solid var(--border);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.intent-target { font-size: 14px; }
+.intent-content {
+  padding: 16px 18px;
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+.intent-content strong { color: var(--accent); font-weight: 600; }
+.intent-content em { color: var(--text); font-style: italic; }
+.intent-content.loading { color: var(--text-muted); font-style: italic; }
+
+/* ============ MODE TOGGLE ============ */
+.mode-control { width: 100%; }
+.mode-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  line-height: 1.5;
+}
+
+/* ============ CALM MODE — hides every gamified surface ============ */
+body.mode-calm .gamified { display: none !important; }
+
+/* ============ BRIEF MODAL ============ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  z-index: 200;
+  display: grid; place-items: center;
+  background: rgba(20,20,20,.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: fade-in 220ms;
+  padding: 20px;
+}
+.modal-card {
+  background: var(--bg-elev);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  width: min(480px, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: fade-in-up 280ms var(--ease);
+}
+.brief-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 10px;
+}
+.brief-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 20px;
+  letter-spacing: -.015em;
+  color: var(--text);
+}
+.brief-content {
+  color: var(--text-soft);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  margin-bottom: 24px;
+}
+.brief-content strong { color: var(--accent); font-weight: 600; }
+.brief-content em { color: var(--text); font-style: italic; }
+.brief-content.loading { color: var(--text-muted); font-style: italic; }
+
+/* ============ PERSONAL BEST BADGE in coach feedback ============ */
+.personal-best-line {
+  background: var(--accent-bg);
+  border-left: 3px solid var(--accent);
+  padding: 10px 14px;
+  border-radius: 4px;
+  margin: 14px 0;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
 /* RESPONSIVE */
 @media (max-width: 600px) {
   .container { padding: 32px 18px 80px; }
@@ -768,4 +1037,7 @@ button {
   .action-btn.primary { padding: 12px 22px; }
   .submit-btn { padding: 14px 20px; }
   .drill-main { padding-top: 36px; padding-bottom: 60px; }
+  .confidence-number { font-size: 48px; }
+  .modal-card { padding: 24px; }
+  .brief-title { font-size: 19px; }
 }
