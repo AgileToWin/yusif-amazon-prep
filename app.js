@@ -226,6 +226,7 @@ function bindEvents() {
   document.getElementById('drawer-goto-progress').addEventListener('click', () => { closeDrawer(); renderProgress(); showScreen('progress'); });
   document.getElementById('drawer-goto-storybank').addEventListener('click', () => { closeDrawer(); renderStoryBank(); showScreen('storybank'); });
   document.getElementById('drawer-goto-closing').addEventListener('click', () => { closeDrawer(); renderClosing(); showScreen('closing'); });
+  document.getElementById('drawer-goto-curve').addEventListener('click', () => { closeDrawer(); _startTrackNow('curve'); });
 
   // Save the take
   document.getElementById('save-take-btn').addEventListener('click', saveCurrentTake);
@@ -389,8 +390,48 @@ async function loadQuestionsAndShowEntry() {
   }
 }
 
+// Per-round integration: each session simulates a complete interview slot.
+// R1/R2/R3 weave in curve balls mid-session and closing questions at the end.
+// Tech and standalone (curve/closing) tracks return their raw questions.
+const CURVE_BALLS_BY_ROUND = {
+  r1: ['curve-silence-test', 'curve-ego-check'],
+  r2: ['curve-precision-trap', 'curve-technical-pivot'],
+  r3: ['curve-provocation-background', 'curve-same-question-twice', 'curve-impossible-choice'],
+};
+const CLOSING_BY_ROUND = {
+  r1: ['closing-90days', 'closing-wish-known'],
+  r2: ['closing-biggest-change', 'closing-oncall-rhythm'],
+  r3: ['closing-promotion-path', 'closing-redesign-workflow'],
+};
+
 function questionsForRound(round) {
-  return state.questions.filter(q => q.round === round);
+  // Non-integrated tracks return their raw set
+  if (round === 'tech' || round === 'closing' || round === 'curve') {
+    return state.questions.filter(q => q.round === round);
+  }
+
+  // Integrated rounds (r1/r2/r3): weave curves into the middle, closings at the end
+  const primary = state.questions.filter(q => q.round === round);
+  const curveIds = CURVE_BALLS_BY_ROUND[round] || [];
+  const closingIds = CLOSING_BY_ROUND[round] || [];
+  const curves = curveIds.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
+  const closings = closingIds.map(id => state.questions.find(q => q.id === id)).filter(Boolean);
+
+  if (curves.length === 0 && closings.length === 0) return primary;
+
+  // Place curves at roughly 1/3 and 2/3 of the primary block (and a 3rd in R3 near end)
+  const ordered = [];
+  primary.forEach((q, i) => {
+    ordered.push(q);
+    const oneThird = Math.floor(primary.length / 3);
+    const twoThirds = Math.floor((primary.length * 2) / 3);
+    if (i === oneThird - 1 && curves[0]) ordered.push(curves[0]);
+    if (i === twoThirds - 1 && curves[1]) ordered.push(curves[1]);
+    if (i === primary.length - 2 && curves[2]) ordered.push(curves[2]); // R3 only
+  });
+  // Closings at the very end
+  closings.forEach(q => ordered.push(q));
+  return ordered;
 }
 
 // ============= COUNTDOWN RIBBON =============
@@ -797,7 +838,12 @@ function renderSidebarQuestionList() {
     const li = document.createElement('li');
     li.className = 'q-item';
     li.dataset.idx = idx;
-    const label = q.lp || q.topic || 'Question';
+    let label = q.lp || q.topic;
+    if (!label) {
+      if (q.component === 'ask') label = 'Their turn — ask';
+      else if (q.component === 'curve') label = 'Curve';
+      else label = 'Question';
+    }
     const previewText = (q.text || '').substring(0, 56).trim();
     li.innerHTML = `
       <span class="q-num">${idx + 1}</span>
@@ -873,8 +919,10 @@ function renderQuestion() {
   compEl.textContent = compName;
   compEl.className = 'tag tag-component ' + compName.toLowerCase();
 
-  // Bar Raiser badge — R3 only
-  document.getElementById('q-barraiser').hidden = (state.currentRound !== 'r3');
+  // Bar Raiser badge — visible on R3 questions and curve balls (composure tests are Bar Raiser energy)
+  const isBarRaiserStyle = (state.currentRound === 'r3' && q.round !== 'closing')
+    || q.round === 'curve';
+  document.getElementById('q-barraiser').hidden = !isBarRaiserStyle;
 
   // Save take button hidden by default for new question
   const saveBtn = document.getElementById('save-take-btn');
