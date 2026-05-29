@@ -94,7 +94,92 @@
 
     <div class="home-footer">
       <button class="link-btn" id="goto-tracks">All tracks →</button>
+      <button class="link-btn" id="goto-progress">Progress →</button>
+      <button class="link-btn" id="goto-storybank">Story Bank →</button>
     </div>
+  </main>
+</div>
+
+<!-- PROGRESS SCREEN -->
+<div class="screen" id="screen-progress" hidden>
+  <header class="top-bar">
+    <button class="icon-btn" id="back-from-progress" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19l-7-7 7-7 1.4 1.4L11.3 12l5.6 5.6z"/></svg>
+    </button>
+    <div class="brand-text">Progress</div>
+    <button class="icon-btn" id="print-progress" aria-label="Print as PDF" title="Print as PDF">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 8h-1V3H6v5H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm4-6h-2v-2H6v2H4v-2h16v2z"/></svg>
+    </button>
+  </header>
+  <main class="container progress-main">
+    <section class="progress-stats">
+      <div class="stat-card">
+        <div class="stat-label">Total reps</div>
+        <div class="stat-value" id="stat-reps">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Days active</div>
+        <div class="stat-value" id="stat-days">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Saved takes</div>
+        <div class="stat-value" id="stat-takes">0</div>
+      </div>
+    </section>
+
+    <section class="progress-section">
+      <h2>Rubric scores</h2>
+      <div class="rubric-heatmap" id="rubric-heatmap"></div>
+    </section>
+
+    <section class="progress-section">
+      <h2>LP mastery</h2>
+      <div class="mastery-grid" id="mastery-grid-full"></div>
+    </section>
+
+    <section class="progress-section">
+      <h2>Recent activity</h2>
+      <ul class="activity-list" id="activity-list"></ul>
+    </section>
+
+    <section class="progress-section">
+      <h2>Marked for re-attempt</h2>
+      <ul class="reattempt-list" id="reattempt-list"></ul>
+    </section>
+  </main>
+</div>
+
+<!-- STORY BANK SCREEN -->
+<div class="screen" id="screen-storybank" hidden>
+  <header class="top-bar">
+    <button class="icon-btn" id="back-from-storybank" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19l-7-7 7-7 1.4 1.4L11.3 12l5.6 5.6z"/></svg>
+    </button>
+    <div class="brand-text">Story Bank</div>
+    <button class="icon-btn" id="print-storybank" aria-label="Print as PDF" title="Print as PDF">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 8h-1V3H6v5H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm4-6h-2v-2H6v2H4v-2h16v2z"/></svg>
+    </button>
+  </header>
+  <main class="container storybank-main">
+    <p class="page-sub" id="storybank-sub">Your saved takes — the answers the panel would write down.</p>
+    <div class="storybank-list" id="storybank-list"></div>
+  </main>
+</div>
+
+<!-- CLOSING QUESTIONS BROWSE SCREEN -->
+<div class="screen" id="screen-closing" hidden>
+  <header class="top-bar">
+    <button class="icon-btn" id="back-from-closing" aria-label="Back">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M15.5 19l-7-7 7-7 1.4 1.4L11.3 12l5.6 5.6z"/></svg>
+    </button>
+    <div class="brand-text">Closing Questions</div>
+    <button class="icon-btn" id="print-closing" aria-label="Print as PDF" title="Print as PDF">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M19 8h-1V3H6v5H5a3 3 0 0 0-3 3v6h4v4h12v-4h4v-6a3 3 0 0 0-3-3zM8 5h8v3H8V5zm8 14H8v-4h8v4zm4-6h-2v-2H6v2H4v-2h16v2z"/></svg>
+    </button>
+  </header>
+  <main class="container closing-main">
+    <p class="page-sub">Pick 2–3 you'll actually ask. Have a different one ready for each interviewer — they compare notes.</p>
+    <ul class="closing-list" id="closing-list"></ul>
   </main>
 </div>
 
@@ -141,8 +226,15 @@
         <div class="track-icon">🔥</div>
         <h2>Round 3 · Bar Raiser</h2>
         <p class="track-sub">Stacked probing. Time pressure. Honest gaps required.</p>
-        <div class="track-meta"><span>10 questions</span><span>~30 min</span></div>
+        <div class="track-meta"><span>13 questions</span><span>~35 min</span></div>
         <div class="track-cta">Begin →</div>
+      </button>
+      <button class="track-card" data-round="closing">
+        <div class="track-icon">❓</div>
+        <h2>Closing Questions</h2>
+        <p class="track-sub">Questions you ask the interviewers. Practice the asks.</p>
+        <div class="track-meta"><span>8 questions</span><span>~10 min</span></div>
+        <div class="track-cta">Browse →</div>
       </button>
     </div>
 
@@ -182,8 +274,10 @@
     <div class="drill-content">
     <section class="question-view" id="question-view">
       <div class="q-tags">
+        <span class="tag tag-component" id="q-component">—</span>
         <span class="tag" id="q-lp">LP</span>
         <span class="tag muted" id="q-time">~90s</span>
+        <span class="tag tag-barraiser" id="q-barraiser" hidden>👁 Bar Raiser</span>
       </div>
       <h2 class="question-text" id="q-text">Loading question…</h2>
 
@@ -234,6 +328,7 @@
         </div>
         <div class="coach-feedback" id="coach-feedback"></div>
         <div class="coach-error" id="coach-error" hidden></div>
+        <button class="save-take-btn gamified" id="save-take-btn" hidden>💾 Save this take to your Story Bank</button>
       </div>
 
       <div class="chat-history" id="chat-history"></div>
@@ -273,6 +368,20 @@
           <div class="anchor-body">
             <div class="anchor-hint">Read out loud before every session. Lock the rhythm in your mouth before they ask "tell me about yourself."</div>
             <em>"I'm an engineer who switched from rocks to networks. My undergrad was geological engineering at KNUST — instruments, safety, root-cause discipline. Over the last two years I added the digital layer at Pace, GPA 3.86. Deploy Tech is where my two worlds meet — hands on the cable, instruments in hand, and because I'm Linux/security too, I can troubleshoot what I deploy."</em>
+          </div>
+        </details>
+
+        <details class="anchor-card">
+          <summary>Story DNA</summary>
+          <div class="anchor-body">
+            <div class="anchor-hint">5 non-negotiable ingredients of a great LP story. Mentally check off as you draft.</div>
+            <ul class="anchor-list">
+              <li><strong>Name a person</strong> — "Sarah from compliance", not "the team"</li>
+              <li><strong>One quantified outcome</strong> — number, %, $, time, scale</li>
+              <li><strong>One honest gap</strong> — what you'd do differently</li>
+              <li><strong>One bridge</strong> — explicitly name the LP at the end</li>
+              <li><strong>One warmth moment</strong> — a feeling, a reaction, a quote</li>
+            </ul>
           </div>
         </details>
 
@@ -374,6 +483,15 @@
       <label>Session</label>
       <button class="link-btn" id="export-log">Export session log (JSON)</button>
       <button class="link-btn danger" id="clear-session">Clear local session</button>
+    </div>
+
+    <div class="drawer-group gamified">
+      <label>Navigate</label>
+      <button class="link-btn" id="drawer-goto-home">🏠 Home</button>
+      <button class="link-btn" id="drawer-goto-tracks">📚 All tracks</button>
+      <button class="link-btn" id="drawer-goto-progress">📈 Progress</button>
+      <button class="link-btn" id="drawer-goto-storybank">💾 Story Bank</button>
+      <button class="link-btn" id="drawer-goto-closing">❓ Closing Questions</button>
     </div>
 
     <div class="drawer-group">

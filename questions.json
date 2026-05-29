@@ -544,5 +544,199 @@
       "Could the same story demonstrate Earn Trust? How?",
       "Tell me a story that ONLY demonstrates one LP cleanly — no bleed."
     ]
+  },
+
+  {
+    "id": "r1-situational-1",
+    "round": "r1",
+    "component": "situational",
+    "lp": "Bias for Action",
+    "text": "It's 3am and an automated alert shows fiber link 47 is flapping in Data Hall B. Walk me through your first 10 minutes.",
+    "difficulty": "friendly",
+    "timeHint": "~2 min",
+    "strongAnswer": "Open with: 'I confirm the alert is real before touching anything.' Then walk through the diagnostic flow: check the ticket and any active changes (rule out planned work), pull up monitoring to confirm flap pattern + interface counters, check both ends of the fiber from the management network (ip link, ethtool, transceiver readings). If physical inspection needed, escalate to whoever's on-call for the data hall AND grab a partner — never solo on the floor at 3am. Document each step in the ticket as you go. Goal: stable link or known-good handoff to NetEng by end of shift.",
+    "probing": [
+      "What's the cheapest test you'd run first, before walking to the rack?",
+      "If the alert disappears while you're investigating, do you close the ticket?",
+      "When do you wake up your shift lead versus handle it yourself?"
+    ]
+  },
+  {
+    "id": "r1-situational-2",
+    "round": "r1",
+    "component": "situational",
+    "lp": "Insist on Highest Standards",
+    "text": "You've just finished a rack install at 11pm. Routine cable management left. You discover that one fiber port is labeled SMF on the rack diagram but the cable in your hand is OM3. What do you do?",
+    "difficulty": "friendly",
+    "timeHint": "~90s",
+    "strongAnswer": "Stop. Confirm which is wrong — the diagram or the cable. Check the work order: what was specified? If SMF was specified, OM3 won't carry the intended distance — that's an actual functional defect, not a labeling issue. Don't 'just label the diagram OM3' to match what was installed. Pull the OM3 cable, install the correct SMF cable, update the diagram accordingly. Document the discrepancy in the ticket — was this an install error or a planning error? Helps prevent it next time. Yes, this adds time at 11pm. Worth it.",
+    "probing": [
+      "What if the OM3 cable will actually work for the distance in question — does that change your call?",
+      "How do you frame this to your shift partner who wants to go home?",
+      "When have you done the harder thing late at night and been glad you did?"
+    ]
+  },
+  {
+    "id": "r2-situational-1",
+    "round": "r2",
+    "component": "situational",
+    "lp": "Earn Trust",
+    "text": "Your shift partner consistently skips the post-install cable management step. They've been at AWS three years longer than you. How do you handle it?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Two-step approach. First, peer-level: bring it up directly with them. 'Hey, I noticed we've been skipping cable management on the last few installs. I want to make sure we're on the same page — what's your read on it?' Listen — there might be context (tool issue, time pressure they're managing). If they push back or it continues: escalate to the shift lead — not as a complaint, as a process question. 'I want to understand the team standard on cable management post-install.' Don't make it about the person; make it about the standard. Frame: I'm new, I want to do it right, can someone clarify the bar?",
+    "probing": [
+      "What if they say 'we don't do that here anymore'?",
+      "How do you avoid being labeled the new tech who tattles?",
+      "When does seniority outweigh the SOP — ever?"
+    ]
+  },
+  {
+    "id": "r2-situational-2",
+    "round": "r2",
+    "component": "situational",
+    "lp": "Bias for Action",
+    "text": "A TPM walks up mid-install and says the spec just changed — different switch family, different cable type. The team is exhausted, four hours in. Half-done install. What do you do?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Three quick questions before anything else: (1) Is the change urgent enough to redo right now, or can the current install ship as-planned and the new spec apply going forward? (2) What was the trigger for the spec change — a defect, a customer ask, a leadership decision? Affects how you respond. (3) Can I get the change in writing — work order updated — before we rip anything? Don't tear down based on a hallway change. Once you have those answers, share them with the team explicitly: 'Here's the change, here's why, here's what we're doing now.' If you do redo: pace yourselves, swap who's doing the heavy lifting, log the time impact. Tired teams cause incidents.",
+    "probing": [
+      "What if the TPM says 'no time to write it up, just trust me'?",
+      "How do you decide who on a tired team gets the hardest remaining task?",
+      "Is there ever a time you'd push back to your TPM and say 'no'?"
+    ]
+  },
+  {
+    "id": "r2-situational-3",
+    "round": "r2",
+    "component": "situational",
+    "lp": "Dive Deep",
+    "text": "You're paged to a P2 incident. While diagnosing, you notice an unrelated misconfiguration that's a security risk. The P2 is partly fixed; the security gap will take another 30 min. Shift handover is in 20 min. What do you do?",
+    "difficulty": "mixed",
+    "timeHint": "~2 min",
+    "strongAnswer": "Triage explicitly. Finish the P2 — that's what you were paged for, and partial fixes can regress. Document the security finding immediately in the ticket and in a separate ticket — that creates the paper trail no matter what happens next. At handover, walk the next shift through both: 'P2 is at state X, here's what's left. Separately, I found this security gap during the P2 work — it's in ticket Y, here's the severity I'm assigning.' Don't try to be a hero and miss the handover; don't leave the security finding unrecorded. Both get handled — just not both by you, right now.",
+    "probing": [
+      "What severity do you give the security finding without leadership input?",
+      "What if the next shift says they're slammed and can't pick it up?",
+      "Tell me a time you found a 'bonus' problem while solving the main one."
+    ]
+  },
+  {
+    "id": "r3-situational-1",
+    "round": "r3",
+    "component": "situational",
+    "lp": "Earn Trust + Have Backbone",
+    "text": "You've been at AWS 9 months. A senior tech who's personally taught you a lot consistently bends safety procedure in ways that make you uncomfortable. They're well-liked. They've never been called out. What do you do?",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "This is the room's likability stress test. Two truths to hold at once: (1) I'm grateful to them and respect what they've taught me, (2) Safety bends compound. Not for the team's sake — for them. Step 1: talk to them directly, once, privately. 'I want to flag something. The last three installs you skipped the wrist strap. I know you've been doing this longer than I have. Am I missing context?' Listen. If their answer is 'I've never had an incident' — that's the answer that tells you the next step. Step 2: if it continues, escalate to your manager. Not the safety team first — your manager, with specifics. Make it about the pattern, not the person. Yes, this risks the mentor relationship. The alternative is being the person who saw it and stayed quiet when something went wrong. The Earn Trust LP includes 'vocally self-critical' — the same standard applies to people you respect.",
+    "probing": [
+      "What if your manager dismisses it because the senior tech is the manager's friend?",
+      "Walk me through what changes in your relationship with the senior tech after this.",
+      "Have you ever been the senior person who got that feedback from someone junior? How did you take it?"
+    ]
+  },
+  {
+    "id": "r3-situational-2",
+    "round": "r3",
+    "component": "situational",
+    "lp": "Have Backbone; Disagree and Commit",
+    "text": "You disagreed in writing with your lead's call on a rollout sequence. Your lead pushed it through anyway. The rollout failed at 3am, exactly where you flagged. Your lead is now on a war-room call with leadership. What do you do?",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Three things, in order. First: help fix the immediate problem. Anything else is the wrong priority right now. Join the war room, share what I know, work the recovery. Second: do NOT say 'I told you so' in the war room. Not in any form. The team needs trust right now, not points. Third: after the recovery, debrief privately with my lead — not 'I was right,' but 'what's the lesson, and how do we make the disagreement-and-commit pattern produce better decisions next time?' That's the LP — disagree and commit, then own the outcome together. If my lead later wants to publicly credit my flag, fine — but I don't volunteer it. Trust deposits compound when you eat the moment.",
+    "probing": [
+      "What if leadership asks the room directly 'did anyone see this coming?' How do you answer?",
+      "How do you avoid this becoming a pattern where you flag and they ignore?",
+      "Have you ever been wrong about a flag you raised loudly? How did you handle it?"
+    ]
+  },
+  {
+    "id": "r3-situational-3",
+    "round": "r3",
+    "component": "situational",
+    "lp": "Insist on Highest Standards",
+    "text": "You're 4 hours into a 12-hour data hall maintenance window. Half the team is exhausted. The lead is pushing to skip the test step on the remaining 20 racks to finish on time. Skipping is technically allowed under the SOP if 'all prior racks passed cleanly' — which they did. What do you do?",
+    "difficulty": "hostile",
+    "timeHint": "~3 min",
+    "strongAnswer": "Pause before agreeing. Two questions: (1) Why does the SOP allow skipping in this case? Understanding the why tells you whether the assumption still holds at hour 8 of a 12-hour window. Fatigue changes things even if the racks are similar. (2) What's the actual cost of running the test step? On 20 racks, probably an hour total. Then frame to the lead: 'The SOP allows it, but at hour 8 we're not the same operators we were at hour 1. I'd rather take the extra hour and run the test. If you want to override, that's your call — I'll commit either way.' That's disagree and commit. The standard isn't 'never skip,' the standard is 'know why you're skipping and own the outcome.' If something fails at 2am, the team didn't fail — the call to skip did.",
+    "probing": [
+      "What if the lead says 'just trust me, I've done this 30 times'?",
+      "How do you separate fatigue-driven caution from genuine risk?",
+      "When have you held the standard and been wrong about it?"
+    ]
+  },
+
+  {
+    "id": "closing-90days",
+    "round": "closing",
+    "component": "ask",
+    "text": "What does a successful first 90 days look like in this role?",
+    "context": "Ask the hiring manager. Signals: long-term thinking, intent to make impact, want clear expectations. Ideal early in the loop so their answer informs how you tell your own stories.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "Use this with the hiring manager. Don't ask each interviewer — they compare notes."
+  },
+  {
+    "id": "closing-knowledge-transfer",
+    "round": "closing",
+    "component": "ask",
+    "text": "How does the team handle knowledge transfer when a senior tech rotates out?",
+    "context": "Ask a peer-level interviewer (TPM or another deploy tech if you get one). Signals: you're thinking about team durability + your own learning curve. Their answer tells you if there's a real onboarding process or if you'll learn by osmosis.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "Listen closely to the answer — a fuzzy answer here is a signal."
+  },
+  {
+    "id": "closing-biggest-change",
+    "round": "closing",
+    "component": "ask",
+    "text": "What's the biggest infrastructure change this team has shipped in the last six months?",
+    "context": "Ask a Network Engineer or technical lead. Signals: you're curious about the technical scope of the work, not just the day-to-day ticket queue. Their answer tells you the ambition level of the team.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "Bonus: if the answer is exciting, follow up with 'what did you learn from it?' — shows you value reflection."
+  },
+  {
+    "id": "closing-oncall-rhythm",
+    "round": "closing",
+    "component": "ask",
+    "text": "What does the on-call rhythm look like in practice — how often is someone actually paged at 3am?",
+    "context": "Ask the manager or TPM. Signals: you're realistic about the role, not pretending 24/7 won't affect you. Don't sound worried — sound informed.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "Frame as 'in practice' — that signals you know the on-call documentation already, you want the reality."
+  },
+  {
+    "id": "closing-promotion-path",
+    "round": "closing",
+    "component": "ask",
+    "text": "What's the path from Deploy Tech II to Network Engineer at AWS?",
+    "context": "Ask the hiring manager or a Network Engineer. Signals: ambition, intent to grow, you're thinking past the role you're interviewing for. Especially good for an IC role where 'how do I level up' is on the panel's mind.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "Don't ask 'will I be promoted' — ask the path. Big difference."
+  },
+  {
+    "id": "closing-success-habit",
+    "round": "closing",
+    "component": "ask",
+    "text": "What's the one habit on the team that separates the new techs who stay from the ones who don't?",
+    "context": "Ask anyone. Signals: you want to model the right behaviour from day one. Their answer is a free playbook.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "If they hesitate to answer, that's also a signal. Listen for whether the habit they name is something you can authentically embody."
+  },
+  {
+    "id": "closing-wish-known",
+    "round": "closing",
+    "component": "ask",
+    "text": "What's something you wish you'd known when you started this role?",
+    "context": "Ask the most senior interviewer who once held a similar role. Signals: humility, openness to learn, real curiosity. Their answer is often the most candid moment of the interview.",
+    "timeHint": "ask in ~10s",
+    "strongAnswer": "This is a question Yusif's geological eng background sets him up well for — he's good at it. The interviewer remembers being new."
+  },
+  {
+    "id": "closing-redesign-workflow",
+    "round": "closing",
+    "component": "ask",
+    "text": "If you could redesign one workflow on this team, what would it be — and why hasn't it changed yet?",
+    "context": "Ask the manager or senior tech. Signals: you think about systems, not just tasks. The 'why hasn't it changed' tail forces the candid answer about politics, budget, or attention. Use this sparingly — once per loop max.",
+    "timeHint": "ask in ~15s",
+    "strongAnswer": "Bonus: ends the interview on a thoughtful, slightly unusual note. The panel remembers it."
   }
 ]

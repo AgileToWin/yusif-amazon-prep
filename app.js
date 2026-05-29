@@ -96,7 +96,16 @@ const TRACK_NAMES = {
   r1:   'Round 1 · Friendly',
   r2:   'Round 2 · Mixed',
   r3:   'Round 3 · Bar Raiser',
+  closing: 'Closing Questions',
 };
+
+function componentForQuestion(q) {
+  if (q.component === 'ask') return 'Ask';
+  if (q.component === 'situational') return 'Situational';
+  if (q.lp) return 'Behavioral';
+  if (q.topic) return 'Technical';
+  return '—';
+}
 
 const RUBRIC = [
   { id: 'tech',    name: 'Technical Accuracy',  hint: 'Facts right, depth matches' },
@@ -147,8 +156,10 @@ const state = {
   timerInterval: null,
   timerStart: null,
   sessionLog: JSON.parse(localStorage.getItem('session_log') || '[]'),
-  gamificationOn: localStorage.getItem('gamificationOn') !== 'false', // default ON
-  intentLoaded: {}, // questionId -> true when intent already fetched
+  savedTakes: JSON.parse(localStorage.getItem('saved_takes') || '[]'),
+  gamificationOn: localStorage.getItem('gamificationOn') !== 'false',
+  intentLoaded: {},
+  pendingTrimType: null,
 };
 
 // ============= INIT =============
@@ -194,8 +205,28 @@ function bindEvents() {
   // Home (Training mode entry)
   document.getElementById('mission-begin').addEventListener('click', beginTodaysMission);
   document.getElementById('goto-tracks').addEventListener('click', () => showScreen('tracks'));
+  document.getElementById('goto-progress').addEventListener('click', () => { renderProgress(); showScreen('progress'); });
+  document.getElementById('goto-storybank').addEventListener('click', () => { renderStoryBank(); showScreen('storybank'); });
   document.getElementById('confidence-detail-btn').addEventListener('click', toggleConfidenceBreakdown);
   document.getElementById('open-settings-home').addEventListener('click', openDrawer);
+
+  // Progress / Story Bank / Closing screens — nav + print
+  document.getElementById('back-from-progress').addEventListener('click', () => showScreen(state.gamificationOn ? 'home' : 'tracks'));
+  document.getElementById('back-from-storybank').addEventListener('click', () => showScreen(state.gamificationOn ? 'home' : 'tracks'));
+  document.getElementById('back-from-closing').addEventListener('click', () => showScreen('tracks'));
+  document.getElementById('print-progress').addEventListener('click', () => window.print());
+  document.getElementById('print-storybank').addEventListener('click', () => window.print());
+  document.getElementById('print-closing').addEventListener('click', () => window.print());
+
+  // Drawer navigation links
+  document.getElementById('drawer-goto-home').addEventListener('click', () => { closeDrawer(); if (state.user) { renderHome(); showScreen('home'); }});
+  document.getElementById('drawer-goto-tracks').addEventListener('click', () => { closeDrawer(); showScreen('tracks'); });
+  document.getElementById('drawer-goto-progress').addEventListener('click', () => { closeDrawer(); renderProgress(); showScreen('progress'); });
+  document.getElementById('drawer-goto-storybank').addEventListener('click', () => { closeDrawer(); renderStoryBank(); showScreen('storybank'); });
+  document.getElementById('drawer-goto-closing').addEventListener('click', () => { closeDrawer(); renderClosing(); showScreen('closing'); });
+
+  // Save the take
+  document.getElementById('save-take-btn').addEventListener('click', saveCurrentTake);
 
   // Tracks
   document.querySelectorAll('.track-card').forEach(card => {
@@ -245,7 +276,12 @@ function bindEvents() {
   });
   document.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.getElementById('chat-input').value = chip.dataset.prompt;
+      // Tag the next coach response as trim/punchier so we render side-by-side
+      const promptText = chip.dataset.prompt || '';
+      if (/trim|under 90|cut/i.test(promptText)) state.pendingTrimType = 'trim';
+      else if (/punchier|sharper verbs|tighter sentences/i.test(promptText)) state.pendingTrimType = 'punchier';
+      else state.pendingTrimType = null;
+      document.getElementById('chat-input').value = promptText;
       sendChatMessage();
     });
   });
@@ -600,11 +636,10 @@ function renderStreak() {
 // ============= SCREEN ROUTING =============
 function showScreen(name) {
   state.screen = name;
-  ['loading', 'login', 'denied', 'home', 'tracks', 'drill'].forEach(s => {
+  ['loading', 'login', 'denied', 'home', 'tracks', 'drill', 'progress', 'storybank', 'closing'].forEach(s => {
     const el = document.getElementById('screen-' + s);
     if (el) el.hidden = (s !== name);
   });
-  // Countdown ribbon visible on home/tracks/drill, hidden on login/denied/loading
   const ribbon = document.getElementById('countdown-ribbon');
   if (ribbon) ribbon.hidden = ['login', 'denied', 'loading'].includes(name);
   window.scrollTo({ top: 0, behavior: 'auto' });
@@ -612,6 +647,12 @@ function showScreen(name) {
 
 // ============= TRACK / DRILL =============
 function startTrack(round) {
+  // Closing questions go to the dedicated browse screen (read-only, no coach loop)
+  if (round === 'closing') {
+    renderClosing();
+    showScreen('closing');
+    return;
+  }
   // In Training mode, show the pre-session brief first; then start.
   if (state.gamificationOn) {
     state.pendingTrack = round;
@@ -824,6 +865,19 @@ function renderQuestion() {
   document.getElementById('q-lp').textContent = q.lp || q.topic || '—';
   document.getElementById('q-time').textContent = q.timeHint || '~90s';
 
+  // Component label
+  const compName = componentForQuestion(q);
+  const compEl = document.getElementById('q-component');
+  compEl.textContent = compName;
+  compEl.className = 'tag tag-component ' + compName.toLowerCase();
+
+  // Bar Raiser badge — R3 only
+  document.getElementById('q-barraiser').hidden = (state.currentRound !== 'r3');
+
+  // Save take button hidden by default for new question
+  const saveBtn = document.getElementById('save-take-btn');
+  if (saveBtn) { saveBtn.hidden = true; saveBtn.classList.remove('saved'); saveBtn.textContent = '💾 Save this take to your Story Bank'; }
+
   // Reset question view
   const ta = document.getElementById('answer-text');
   ta.value = '';
@@ -1000,6 +1054,9 @@ async function requestInitialCoach() {
 
     document.getElementById('chat-input-row').hidden = false;
     document.getElementById('chat-prompts').hidden = false;
+
+    // Show Save Take button if scores look strong
+    maybeShowSaveTakeButton(parsed.scores);
   } catch (e) {
     console.error('coach request failed', e);
     showCoachError(`Couldn't reach the coach: ${e.message}. Try refreshing your sign-in (sign out and back in) — the token may have expired.`);
@@ -1088,7 +1145,14 @@ async function sendChatMessage() {
     const data = await resp.json();
     const parsed = parseReplyAndScores(data.reply);
     state.conversation.push({ role: 'assistant', content: data.reply });
-    coachEl.innerHTML = renderMarkdown(parsed.prose);
+
+    // If this was a trim/punchier chip click, render side-by-side Trim Tape
+    if (state.pendingTrimType) {
+      renderTrimTapeInElement(coachEl, state.pendingTrimType, parsed.prose);
+      state.pendingTrimType = null;
+    } else {
+      coachEl.innerHTML = renderMarkdown(parsed.prose);
+    }
   } catch (e) {
     console.error('chat request failed', e);
     coachEl.innerHTML = `<em>Couldn't reach the coach: ${e.message}</em>`;
@@ -1113,6 +1177,303 @@ function appendChatMsg(role, text, thinking) {
 
 async function safeJson(resp) {
   try { return await resp.json(); } catch (_) { return {}; }
+}
+
+// ============= TRIM TAPE (side-by-side original vs trimmed) =============
+function wordsAndTime(text) {
+  const cleaned = (text || '').trim();
+  const words = cleaned ? cleaned.split(/\s+/).length : 0;
+  const seconds = Math.round((words / 150) * 60);
+  const mm = Math.floor(seconds / 60);
+  const ss = seconds % 60;
+  const timeStr = mm > 0 ? `${mm}m ${ss}s` : `${ss}s`;
+  return { words, seconds, timeStr };
+}
+
+function renderTrimTapeInElement(el, trimType, trimmedProse) {
+  const originalAnswer = document.getElementById('answer-text').value.trim();
+  // Coach's WHY prefix may end with a colon line, then the rewrite. Try to split.
+  let why = '', rewritten = trimmedProse;
+  const colonSplit = trimmedProse.split(/\n\n/);
+  if (colonSplit.length >= 2 && colonSplit[0].length < 220) {
+    why = colonSplit[0];
+    rewritten = colonSplit.slice(1).join('\n\n');
+  }
+  const origStats = wordsAndTime(originalAnswer);
+  const newStats = wordsAndTime(rewritten);
+  const deltaSec = Math.max(0, origStats.seconds - newStats.seconds);
+  const deltaStr = deltaSec >= 60 ? `${Math.floor(deltaSec/60)}m ${deltaSec%60}s` : `${deltaSec}s`;
+  const label = trimType === 'punchier' ? 'Punchier rewrite' : 'Trimmed to ≤90s';
+
+  el.innerHTML = `
+    ${why ? `<div style="margin-bottom: 12px; color: var(--text-soft); font-size: 14px;">${renderMarkdown(why)}</div>` : ''}
+    <div class="trim-tape">
+      <div class="tape-side original">
+        <div class="tape-label">Your original</div>
+        <div class="tape-content">${escapeHtml(originalAnswer || '(no answer recorded)')}</div>
+        <div class="tape-meta"><span>${origStats.words} words</span><span>≈ ${origStats.timeStr}</span></div>
+      </div>
+      <div class="tape-side trimmed">
+        <div class="tape-label">${label}</div>
+        <div class="tape-content">${escapeHtml(rewritten || '—')}</div>
+        <div class="tape-meta"><span>${newStats.words} words</span><span>≈ ${newStats.timeStr}</span></div>
+      </div>
+    </div>
+    ${deltaSec > 0 ? `<div class="tape-delta">${origStats.timeStr} → ${newStats.timeStr} · saved ${deltaStr}</div>` : ''}
+  `;
+}
+
+// ============= SAVE THE TAKE =============
+function maybeShowSaveTakeButton(scores) {
+  const btn = document.getElementById('save-take-btn');
+  if (!btn || !scores) return;
+  const vals = Object.values(scores).filter(v => typeof v === 'number');
+  if (vals.length === 0) return;
+  const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
+  if (avg >= 4.0) {
+    btn.hidden = false;
+  }
+}
+
+function saveCurrentTake() {
+  const list = questionsForRound(state.currentRound);
+  const q = list[state.currentIdx];
+  if (!q) return;
+  const coachReply = (state.conversation.find(m => m.role === 'assistant') || {}).content || '';
+  const take = {
+    timestamp: new Date().toISOString(),
+    questionId: q.id,
+    questionText: q.text,
+    round: state.currentRound,
+    lp: q.lp || null,
+    topic: q.topic || null,
+    component: componentForQuestion(q),
+    answer: document.getElementById('answer-text').value,
+    scores: state.lastScores || null,
+    coachReply,
+  };
+  state.savedTakes.push(take);
+  localStorage.setItem('saved_takes', JSON.stringify(state.savedTakes));
+  const btn = document.getElementById('save-take-btn');
+  if (btn) {
+    btn.classList.add('saved');
+    btn.textContent = '✓ Saved to Story Bank';
+    btn.disabled = true;
+  }
+}
+
+// ============= PROGRESS SCREEN =============
+function renderProgress() {
+  // Stats
+  document.getElementById('stat-reps').textContent = state.sessionLog.length;
+  const dateSet = new Set();
+  state.sessionLog.forEach(a => {
+    if (a.timestamp) dateSet.add(a.timestamp.slice(0, 10));
+  });
+  document.getElementById('stat-days').textContent = dateSet.size;
+  document.getElementById('stat-takes').textContent = state.savedTakes.length;
+
+  // Rubric heatmap — avg per dimension
+  const heatmap = document.getElementById('rubric-heatmap');
+  heatmap.innerHTML = '';
+  RUBRIC.forEach(dim => {
+    let sum = 0, count = 0;
+    state.sessionLog.forEach(a => {
+      if (a.scores && typeof a.scores[dim.id] === 'number') {
+        sum += a.scores[dim.id]; count++;
+      }
+    });
+    const avg = count > 0 ? sum / count : 0;
+    const pct = (avg / 5) * 100;
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    row.innerHTML = `
+      <div class="heatmap-name">${dim.name}</div>
+      <div class="heatmap-bar-track"><div class="heatmap-bar-fill" style="width: ${pct}%"></div></div>
+      <div class="heatmap-score">${count > 0 ? avg.toFixed(1) : '—'}<span class="denom"> / 5</span></div>
+    `;
+    heatmap.appendChild(row);
+  });
+
+  // LP mastery (full)
+  const masteryGrid = document.getElementById('mastery-grid-full');
+  const tiers = computeMastery();
+  masteryGrid.innerHTML = '';
+  LP_LIST.forEach(lp => {
+    const t = tiers[lp];
+    const item = document.createElement('div');
+    item.className = 'mastery-item';
+    item.innerHTML = `
+      <div class="mastery-dot ${t.tier}" title="${t.tier}"></div>
+      <div class="mastery-text">
+        <div class="mastery-name">${lp}</div>
+        <div class="mastery-tier">${t.tier}${t.reps > 0 ? ' · ' + t.reps + ' rep' + (t.reps === 1 ? '' : 's') : ''}</div>
+      </div>
+    `;
+    masteryGrid.appendChild(item);
+  });
+
+  // Recent activity (last 10)
+  const activityList = document.getElementById('activity-list');
+  activityList.innerHTML = '';
+  const recent = state.sessionLog.slice(-10).reverse();
+  if (recent.length === 0) {
+    activityList.innerHTML = '<li class="activity-empty">No reps yet. Start a session to see activity here.</li>';
+  } else {
+    recent.forEach(a => {
+      const li = document.createElement('li');
+      li.className = 'activity-item';
+      const ts = new Date(a.timestamp);
+      const dateStr = ts.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      const scoresHtml = a.scores
+        ? Object.entries(a.scores)
+            .filter(([, v]) => typeof v === 'number')
+            .map(([k, v]) => `<span title="${k}">${v}</span>`).join(' · ')
+        : '<span style="color: var(--text-muted);">no scores</span>';
+      li.innerHTML = `
+        <div>
+          <div class="activity-q">${escapeHtml((a.questionText || '').substring(0, 120))}${(a.questionText || '').length > 120 ? '…' : ''}</div>
+          <div class="activity-meta">${dateStr} · ${TRACK_NAMES[a.round] || a.round} · ${a.lp || a.topic || ''}</div>
+        </div>
+        <div class="activity-scores">${scoresHtml}</div>
+      `;
+      activityList.appendChild(li);
+    });
+  }
+
+  // Re-attempt queue
+  const reattemptList = document.getElementById('reattempt-list');
+  reattemptList.innerHTML = '';
+  const reattempts = state.sessionLog.filter(a => a.reattempt).slice(-10).reverse();
+  if (reattempts.length === 0) {
+    reattemptList.innerHTML = '<li class="activity-empty">No questions marked for re-attempt. Use the checkbox after a session.</li>';
+  } else {
+    reattempts.forEach(a => {
+      const li = document.createElement('li');
+      li.className = 'reattempt-item';
+      const ts = new Date(a.timestamp);
+      const dateStr = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      li.innerHTML = `
+        <div>
+          <div class="reattempt-q">${escapeHtml((a.questionText || '').substring(0, 140))}${(a.questionText || '').length > 140 ? '…' : ''}</div>
+          <div class="reattempt-meta">${TRACK_NAMES[a.round] || a.round} · ${a.lp || a.topic || ''} · marked ${dateStr}</div>
+        </div>
+      `;
+      reattemptList.appendChild(li);
+    });
+  }
+}
+
+// ============= STORY BANK SCREEN =============
+function renderStoryBank() {
+  const list = document.getElementById('storybank-list');
+  const sub = document.getElementById('storybank-sub');
+  list.innerHTML = '';
+  if (state.savedTakes.length === 0) {
+    list.innerHTML = `
+      <div class="bank-empty">
+        <strong>Your Story Bank is empty.</strong>
+        Saved takes appear here when your coach feedback averages 4.0 or higher.
+        Open a track, give a strong answer, then tap "Save this take" in the coach panel.
+      </div>
+    `;
+    sub.textContent = '';
+    return;
+  }
+  sub.textContent = `${state.savedTakes.length} saved take${state.savedTakes.length === 1 ? '' : 's'} — the answers the panel would write down.`;
+
+  // Group by LP/topic
+  const groups = {};
+  state.savedTakes.forEach(t => {
+    const key = t.lp || t.topic || 'Other';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+
+  Object.entries(groups).forEach(([key, takes]) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'bank-group';
+    groupEl.innerHTML = `<div class="bank-group-label">${escapeHtml(key)} — ${takes.length} take${takes.length === 1 ? '' : 's'}</div>`;
+    takes.reverse().forEach((t, idx) => {
+      const card = document.createElement('div');
+      card.className = 'bank-card';
+      const scoresHtml = t.scores
+        ? Object.entries(t.scores)
+            .filter(([, v]) => typeof v === 'number')
+            .map(([k, v]) => `<span title="${k}">${k}: ${v}</span>`).join(' · ')
+        : '';
+      const ts = new Date(t.timestamp);
+      const dateStr = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      card.innerHTML = `
+        <div class="bank-card-q">${escapeHtml(t.questionText)}</div>
+        <div class="bank-card-a">${escapeHtml(t.answer || '(no answer recorded)')}</div>
+        <div class="bank-card-meta">
+          <div class="bank-card-scores">${scoresHtml}</div>
+          <div class="bank-card-actions">
+            <button data-bank-copy="${escapeHtml(t.answer || '')}">Copy</button>
+            <button data-bank-delete="${t.timestamp}">Delete</button>
+          </div>
+        </div>
+        <div class="bank-card-meta" style="margin-top: 8px;">
+          <span style="font-size: 11px;">${dateStr} · ${escapeHtml(TRACK_NAMES[t.round] || t.round)}</span>
+        </div>
+      `;
+      groupEl.appendChild(card);
+    });
+    list.appendChild(groupEl);
+  });
+
+  // Wire copy + delete buttons
+  list.querySelectorAll('[data-bank-copy]').forEach(b => {
+    b.addEventListener('click', () => {
+      navigator.clipboard.writeText(b.dataset.bankCopy).then(() => {
+        const original = b.textContent;
+        b.textContent = '✓ Copied';
+        setTimeout(() => b.textContent = original, 1200);
+      });
+    });
+  });
+  list.querySelectorAll('[data-bank-delete]').forEach(b => {
+    b.addEventListener('click', () => {
+      if (!confirm('Delete this saved take?')) return;
+      state.savedTakes = state.savedTakes.filter(t => t.timestamp !== b.dataset.bankDelete);
+      localStorage.setItem('saved_takes', JSON.stringify(state.savedTakes));
+      renderStoryBank();
+    });
+  });
+}
+
+// ============= CLOSING QUESTIONS SCREEN =============
+function renderClosing() {
+  const list = document.getElementById('closing-list');
+  list.innerHTML = '';
+  const closingQs = state.questions.filter(q => q.round === 'closing');
+  closingQs.forEach(q => {
+    const li = document.createElement('li');
+    li.className = 'closing-card';
+    li.innerHTML = `
+      <div class="closing-q">${escapeHtml(q.text)}</div>
+      <div class="closing-context"><strong>When to ask:</strong> ${escapeHtml(q.context || '')}</div>
+      ${q.strongAnswer ? `<div class="closing-tip">${escapeHtml(q.strongAnswer)}</div>` : ''}
+      <div class="closing-actions">
+        <button data-closing-speak="${escapeHtml(q.text)}">🔊 Hear it</button>
+        <button data-closing-copy="${escapeHtml(q.text)}">Copy</button>
+      </div>
+    `;
+    list.appendChild(li);
+  });
+  list.querySelectorAll('[data-closing-speak]').forEach(b => {
+    b.addEventListener('click', () => speak(b.dataset.closingSpeak));
+  });
+  list.querySelectorAll('[data-closing-copy]').forEach(b => {
+    b.addEventListener('click', () => {
+      navigator.clipboard.writeText(b.dataset.closingCopy).then(() => {
+        const original = b.textContent;
+        b.textContent = '✓ Copied';
+        setTimeout(() => b.textContent = original, 1200);
+      });
+    });
+  });
 }
 
 // ============= TTS =============
