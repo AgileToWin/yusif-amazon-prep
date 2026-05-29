@@ -232,7 +232,72 @@ function startTrack(round) {
   state.currentIdx = 0;
   document.getElementById('track-name').textContent = TRACK_NAMES[round];
   showScreen('drill');
+  renderSidebarQuestionList();
   renderQuestion();
+}
+
+// ============= SIDEBAR =============
+function isQuestionCompleted(qId) {
+  return state.sessionLog.some(entry =>
+    entry.round === state.currentRound && entry.questionId === qId
+  );
+}
+
+function renderSidebarQuestionList() {
+  const list = questionsForRound(state.currentRound);
+  const container = document.getElementById('sidebar-questions');
+  if (!container) return;
+  container.innerHTML = '';
+
+  list.forEach((q, idx) => {
+    const li = document.createElement('li');
+    li.className = 'q-item';
+    li.dataset.idx = idx;
+    const label = q.lp || q.topic || 'Question';
+    const previewText = (q.text || '').substring(0, 56).trim();
+    li.innerHTML = `
+      <span class="q-num">${idx + 1}</span>
+      <div class="q-info">
+        <div class="q-label">${escapeHtml(label)}</div>
+        <div class="q-preview">${escapeHtml(previewText)}${q.text && q.text.length > 56 ? '…' : ''}</div>
+      </div>
+    `;
+    li.addEventListener('click', () => {
+      stopMicAndRecording();
+      stopTimer();
+      state.currentIdx = idx;
+      renderQuestion();
+    });
+    container.appendChild(li);
+  });
+
+  updateSidebarProgress();
+}
+
+function updateSidebarProgress() {
+  const list = questionsForRound(state.currentRound);
+  const items = document.querySelectorAll('#sidebar-questions .q-item');
+  items.forEach((item, idx) => {
+    const q = list[idx];
+    item.classList.remove('current', 'done', 'pending');
+    if (idx === state.currentIdx) item.classList.add('current');
+    else if (q && isQuestionCompleted(q.id)) item.classList.add('done');
+    else item.classList.add('pending');
+  });
+
+  const total = list.length;
+  const completed = list.filter(q => isQuestionCompleted(q.id)).length;
+  const nameEl = document.getElementById('sidebar-round-name');
+  if (nameEl) nameEl.textContent = TRACK_NAMES[state.currentRound] || '';
+  const countEl = document.getElementById('sidebar-progress-count');
+  if (countEl) countEl.textContent = `${completed} of ${total} done`;
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 function leaveDrill() {
@@ -279,6 +344,8 @@ function renderQuestion() {
   document.getElementById('question-view').hidden = false;
   document.getElementById('review-view').hidden = true;
   state.reviewMode = false;
+
+  updateSidebarProgress();
 }
 
 // ============= SUBMIT / SAVE-NEXT =============

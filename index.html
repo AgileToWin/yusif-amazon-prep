@@ -120,6 +120,57 @@
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
 
   <main class="container drill-main">
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">Progress</div>
+        <div class="sidebar-round-name" id="sidebar-round-name">—</div>
+        <div class="sidebar-progress-count" id="sidebar-progress-count">0 of 0 done</div>
+        <ol class="question-list" id="sidebar-questions"></ol>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="sidebar-label">Quick anchors</div>
+        <details class="anchor-card" open>
+          <summary>The hook</summary>
+          <div class="anchor-body">
+            <em>"I'm an engineer who switched from rocks to networks. My undergrad was geological engineering at KNUST — instruments, safety, root-cause discipline. Over the last two years I added the digital layer at Pace, GPA 3.86. Deploy Tech is where my two worlds meet — hands on the cable, instruments in hand, and because I'm Linux/security too, I can troubleshoot what I deploy."</em>
+          </div>
+        </details>
+        <details class="anchor-card">
+          <summary>Story sources</summary>
+          <ul class="anchor-list">
+            <li><strong>KNUST SRC VP COVID</strong> — Ownership, Bias for Action, Earn Trust</li>
+            <li><strong>National Grid PCI DSS</strong> — Customer Obsession, Earn Trust</li>
+            <li><strong>Anomaly Detection capstone</strong> — Dive Deep, Highest Standards</li>
+            <li><strong>Network IR Lab</strong> — Deliver Results, Dive Deep</li>
+            <li><strong>Pace AI Lab TA</strong> — Highest Standards, Hire &amp; Develop</li>
+            <li><strong>Geological eng identity</strong> — Learn &amp; Be Curious, Ownership</li>
+          </ul>
+        </details>
+        <details class="anchor-card">
+          <summary>Hard rules for the room</summary>
+          <ul class="anchor-list">
+            <li>Ask clarifying questions before diving in</li>
+            <li>Always talk about customers</li>
+            <li>Think out loud — show how you reason</li>
+            <li>Quantify everything you can</li>
+            <li>Be vocally self-critical when relevant</li>
+            <li><strong>Never</strong> say "that's not my job"</li>
+          </ul>
+        </details>
+        <details class="anchor-card">
+          <summary>Gap reframes</summary>
+          <ul class="anchor-list">
+            <li><strong>No DC experience?</strong> → "Pace network labs + 5 years of geological field sites — same playbook: instruments, SOPs, document."</li>
+            <li><strong>No CCNA/A+?</strong> → "LPI Linux × 2 + Security+. CCNA on my summer plan."</li>
+            <li><strong>No OTDR hands-on?</strong> → "I know the theory; analogous instruments in geological surveys. Day-one supervised, then signed off."</li>
+            <li><strong>BGP/OSPF?</strong> → "Fundamentals — path-vector vs link-state. Not production-yet. Reading on day one."</li>
+          </ul>
+        </details>
+      </div>
+    </aside>
+
+    <div class="drill-content">
     <section class="question-view" id="question-view">
       <div class="q-tags">
         <span class="tag" id="q-lp">LP</span>
@@ -193,6 +244,7 @@
 
       <button class="submit-btn" id="save-next">Next question →</button>
     </section>
+    </div>
   </main>
 </div>
 
