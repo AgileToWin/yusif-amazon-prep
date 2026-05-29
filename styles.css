@@ -1033,6 +1033,104 @@ body.mode-calm .gamified { display: none !important; }
 .brief-content em { color: var(--text); font-style: italic; }
 .brief-content.loading { color: var(--text-muted); font-style: italic; }
 
+/* ============ BULLETPROOF ANSWER — synthesis button + card ============ */
+.bulletproof-row {
+  margin: 18px 0 20px;
+  text-align: center;
+}
+.bulletproof-btn {
+  background: linear-gradient(135deg, var(--accent), #fb923c, #f59e0b);
+  color: white;
+  border: none;
+  padding: 14px 28px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  letter-spacing: -.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(234,88,12,.28);
+  transition: transform 120ms, box-shadow 200ms, filter 200ms;
+}
+.bulletproof-btn:hover { transform: translateY(-1px); box-shadow: 0 12px 32px rgba(234,88,12,.36); filter: brightness(1.04); }
+.bulletproof-btn:active { transform: scale(.97); }
+.bulletproof-btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
+.bulletproof-btn .bp-icon { font-size: 18px; }
+.bulletproof-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  font-style: italic;
+}
+
+.bulletproof-card {
+  background: linear-gradient(180deg, #fff, var(--accent-bg));
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 24px 26px;
+  margin: 14px 0;
+  box-shadow: 0 12px 36px rgba(234,88,12,.16);
+  animation: fade-in-up 420ms var(--ease);
+}
+.bulletproof-card.loading { background: var(--bg-card); border-color: var(--accent-soft); }
+.bulletproof-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.bulletproof-card-label {
+  font-size: 11px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--accent);
+  font-weight: 700;
+}
+.bulletproof-card-stats {
+  font-size: 12px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.bulletproof-card-answer {
+  font-size: 16px; line-height: 1.75;
+  color: var(--text);
+  margin-bottom: 16px;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+.bulletproof-card-rationale {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  font-style: italic;
+}
+.bulletproof-card-rationale strong { color: var(--accent); font-style: normal; }
+.bulletproof-card-actions {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.bulletproof-card-actions button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 150ms, transform 100ms;
+}
+.bulletproof-card-actions button:hover { background: var(--accent-hover); }
+.bulletproof-card-actions button:active { transform: scale(.96); }
+.bulletproof-card-actions button.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+}
+.bulletproof-card-actions button.secondary:hover { background: var(--accent-bg); }
+.bulletproof-card-actions button:disabled { opacity: .6; cursor: default; }
+
 /* ============ PERSONAL BEST BADGE in coach feedback ============ */
 .personal-best-line {
   background: var(--accent-bg);
@@ -1357,6 +1455,8 @@ body.mode-calm .gamified { display: none !important; }
   .action-row,
   .chat-input-row,
   .chat-prompts,
+  .bulletproof-row,
+  .bulletproof-card-actions,
   .reattempt-row,
   .submit-btn,
   .save-take-btn,

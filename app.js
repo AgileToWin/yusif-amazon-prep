@@ -277,6 +277,7 @@ function bindEvents() {
       sendChatMessage();
     }
   });
+  document.getElementById('bulletproof-btn').addEventListener('click', composeBulletproofAnswer);
   document.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
       // Tag the next coach response as trim/punchier so we render side-by-side
@@ -960,6 +961,7 @@ function renderQuestion() {
   document.getElementById('chat-input').value = '';
   document.getElementById('chat-input-row').hidden = true;
   document.getElementById('chat-prompts').hidden = true;
+  document.getElementById('bulletproof-row').hidden = true;
 
   document.getElementById('question-view').hidden = false;
   document.getElementById('review-view').hidden = true;
@@ -1108,6 +1110,7 @@ async function requestInitialCoach() {
 
     document.getElementById('chat-input-row').hidden = false;
     document.getElementById('chat-prompts').hidden = false;
+    document.getElementById('bulletproof-row').hidden = false;
 
     // Show Save Take button if scores look strong
     maybeShowSaveTakeButton(parsed.scores);
@@ -1275,6 +1278,174 @@ function renderTrimTapeInElement(el, trimType, trimmedProse) {
     </div>
     ${deltaSec > 0 ? `<div class="tape-delta">${origStats.timeStr} → ${newStats.timeStr} · saved ${deltaStr}</div>` : ''}
   `;
+}
+
+// ============= BULLETPROOF ANSWER (the closing synthesis) =============
+async function composeBulletproofAnswer() {
+  if (state.coachBusy) return;
+  if (state.conversation.length === 0) return;
+
+  const list = questionsForRound(state.currentRound);
+  const q = list[state.currentIdx];
+  if (!q) return;
+
+  state.coachBusy = true;
+  const btn = document.getElementById('bulletproof-btn');
+  if (btn) btn.disabled = true;
+
+  const isTechnical = !!q.topic;
+  const isCurve = q.round === 'curve' || q.component === 'curve';
+  const lengthHint = isTechnical
+    ? '≤2 minutes spoken (~200–250 words)'
+    : '≤90 seconds spoken (~140–160 words)';
+  const checklist = isCurve
+    ? `- Lead with the response pattern, not a fact recital
+- Name what the interviewer is testing (composure / refusal-to-take-the-bait / honest gap)
+- Optional pushback — but warm, never defensive
+- One acknowledgment of the difficulty of the question
+- One closing line that ends with stability, not apology`
+    : `- One named person (not "the team")
+- One quantified outcome (number, %, $, time, scale)
+- One honest gap (what I'd do differently)
+- One explicit LP bridge sentence at the end
+- One warmth moment (a feeling, a reaction, a quote)`;
+
+  const synthPrompt = `**SYNTHESIS REQUEST.** Take everything we've worked through in this conversation — my original answer, your grading, and every rewrite or improvement you've given me — and compose ONE final BULLETPROOF version I can speak in the room.
+
+It must:
+- Sound like ME. Not corporate polish, not AI-flavoured. My actual voice.
+- ${lengthHint}. Hard ceiling. Cut anything that doesn't earn its space.
+- Open with the strongest sentence — usually the result, the customer outcome, or the headline of the story.
+- Hit STAR cleanly WITHOUT naming the parts out loud.
+- Include:
+${checklist}
+- Land naturally — feel lived-in, not rehearsed.
+
+Output EXACTLY this format (use these literal labels so my client can parse):
+
+THE_ANSWER:
+[the speakable paragraph — no markdown, no bullets, just a clean paragraph I can almost read off the page]
+
+WHY_IT_WORKS:
+[1–2 sentences explaining what makes this version land — specifically what changed from my original. Speak directly to me, second person.]
+
+Nothing else. No preamble, no closing remarks, no probing questions.`;
+
+  // Render the loading card BEFORE the network call
+  const history = document.getElementById('chat-history');
+  const card = document.createElement('div');
+  card.className = 'bulletproof-card loading';
+  card.innerHTML = `
+    <div class="bulletproof-card-head">
+      <span class="bulletproof-card-label">✨ Composing your bulletproof answer</span>
+      <span class="bulletproof-card-stats">…</span>
+    </div>
+    <div class="bulletproof-card-answer" style="color: var(--text-muted); font-style: italic;">
+      The coach is pulling everything we've worked on into one final version.
+    </div>
+  `;
+  history.appendChild(card);
+  card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  // Push the synth request to conversation history
+  state.conversation.push({ role: 'user', content: synthPrompt });
+
+  try {
+    const token = await getIdToken();
+    const resp = await fetch(COACH_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        mode: 'followup',
+        rubric: RUBRIC,
+        history: state.conversation,
+        gamification: state.gamificationOn,
+      }),
+    });
+
+    if (!resp.ok) {
+      state.conversation.pop();
+      const err = await safeJson(resp);
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    const data = await resp.json();
+    const parsed = parseReplyAndScores(data.reply);
+    state.conversation.push({ role: 'assistant', content: data.reply });
+
+    const { theAnswer, whyItWorks } = parseBulletproofResponse(parsed.prose);
+    const stats = wordsAndTime(theAnswer);
+
+    card.classList.remove('loading');
+    card.innerHTML = `
+      <div class="bulletproof-card-head">
+        <span class="bulletproof-card-label">✨ Your bulletproof answer</span>
+        <span class="bulletproof-card-stats">${stats.words} words · ≈ ${stats.timeStr}</span>
+      </div>
+      <div class="bulletproof-card-answer">${escapeHtml(theAnswer)}</div>
+      ${whyItWorks ? `<div class="bulletproof-card-rationale"><strong>Why it works:</strong> ${escapeHtml(whyItWorks)}</div>` : ''}
+      <div class="bulletproof-card-actions">
+        <button class="bp-copy">📋 Copy</button>
+        <button class="secondary bp-speak">🔊 Hear it</button>
+        <button class="secondary bp-save">💾 Save to Story Bank</button>
+      </div>
+    `;
+    card.querySelector('.bp-copy').addEventListener('click', (e) => {
+      navigator.clipboard.writeText(theAnswer).then(() => {
+        e.target.textContent = '✓ Copied';
+        setTimeout(() => e.target.textContent = '📋 Copy', 1300);
+      });
+    });
+    card.querySelector('.bp-speak').addEventListener('click', () => speak(theAnswer));
+    card.querySelector('.bp-save').addEventListener('click', (e) => {
+      saveBulletproofAsTake(theAnswer, whyItWorks);
+      e.target.textContent = '✓ Saved';
+      e.target.disabled = true;
+    });
+  } catch (e) {
+    console.error('bulletproof composition failed', e);
+    card.classList.remove('loading');
+    card.innerHTML = `<div class="bulletproof-card-answer" style="color: var(--danger);"><em>Couldn't compose: ${escapeHtml(e.message)}.</em></div>`;
+  } finally {
+    state.coachBusy = false;
+    if (btn) btn.disabled = false;
+    card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+}
+
+function parseBulletproofResponse(prose) {
+  // Match labels with or without bold formatting around them
+  const answerRe = /(?:\*\*)?THE_ANSWER:?(?:\*\*)?\s*\n?([\s\S]*?)(?=\n\s*(?:\*\*)?WHY_IT_WORKS|\n*$)/i;
+  const whyRe = /(?:\*\*)?WHY_IT_WORKS:?(?:\*\*)?\s*\n?([\s\S]*?)$/i;
+  const aMatch = prose.match(answerRe);
+  const wMatch = prose.match(whyRe);
+  const theAnswer = (aMatch ? aMatch[1] : prose).trim();
+  const whyItWorks = wMatch ? wMatch[1].trim() : '';
+  return { theAnswer, whyItWorks };
+}
+
+function saveBulletproofAsTake(answerText, rationale) {
+  const list = questionsForRound(state.currentRound);
+  const q = list[state.currentIdx];
+  if (!q) return;
+  const take = {
+    timestamp: new Date().toISOString(),
+    questionId: q.id,
+    questionText: q.text,
+    round: state.currentRound,
+    lp: q.lp || null,
+    topic: q.topic || null,
+    component: componentForQuestion(q),
+    answer: answerText,
+    scores: state.lastScores || null,
+    coachReply: rationale ? `Why it works: ${rationale}` : '',
+    bulletproof: true,
+  };
+  state.savedTakes.push(take);
+  localStorage.setItem('saved_takes', JSON.stringify(state.savedTakes));
 }
 
 // ============= SAVE THE TAKE =============
