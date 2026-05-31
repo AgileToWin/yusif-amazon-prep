@@ -169,6 +169,11 @@ const state = {
   })(),
   intentLoaded: {},
   pendingTrimType: null,
+  currentAudio: null,        // active Audio element (TTS or recording playback)
+  currentTtsBlobUrl: null,   // tracked separately so we can revoke on swap (only owned by TTS path)
+  ttsAbortController: null,  // cancels in-flight OpenAI TTS fetch when a new "Hear it" click comes in
+  voicePreference: localStorage.getItem('voice_preference') || null, // remembered user voice choice
+  openaiTtsAvailable: null,  // null=unknown, true=verified working, false=verified broken this session
 };
 
 const BOAST_LABELS = {
@@ -285,6 +290,19 @@ function bindEvents() {
   document.querySelectorAll('.mode-control button').forEach(b => {
     b.addEventListener('click', () => setGamification(b.dataset.mode === 'training'));
   });
+
+  // Voice preference persistence — remember the user's chosen voice across sessions
+  const voiceSelect = document.getElementById('voice-select');
+  if (voiceSelect) {
+    voiceSelect.addEventListener('change', (e) => {
+      state.voicePreference = e.target.value;
+      localStorage.setItem('voice_preference', e.target.value);
+      // Manually switching back to an OpenAI voice resets the "broken" flag — give it another try
+      if (e.target.value.startsWith('openai:')) {
+        state.openaiTtsAvailable = null;
+      }
+    });
+  }
 
   // Boastfulness slider + off button
   const boastSlider = document.getElementById('boast-slider');
@@ -1880,20 +1898,59 @@ function speakQuestion() {
   speak(text);
 }
 
+// Stop any in-flight TTS / playback before starting a new one.
+// Fixes overlapping audio when "Hear it" is clicked rapidly.
+function stopCurrentAudio() {
+  if (state.currentAudio) {
+    try { state.currentAudio.pause(); } catch (_) {}
+    state.currentAudio = null;
+  }
+  if (state.currentTtsBlobUrl) {
+    try { URL.revokeObjectURL(state.currentTtsBlobUrl); } catch (_) {}
+    state.currentTtsBlobUrl = null;
+  }
+  if (state.ttsAbortController) {
+    try { state.ttsAbortController.abort(); } catch (_) {}
+    state.ttsAbortController = null;
+  }
+  if (typeof speechSynthesis !== 'undefined') {
+    try { speechSynthesis.cancel(); } catch (_) {}
+  }
+}
+
 async function speak(text) {
+  // Always stop any prior audio before starting a new one.
+  // This makes the "Hear it" button safe to click multiple times.
+  stopCurrentAudio();
+
   const sel = document.getElementById('voice-select');
   const value = sel ? sel.value : '';
 
-  if (value && value.startsWith('openai:')) {
+  // OpenAI path — try only if the dropdown wants it AND we haven't verified it's broken this session.
+  if (value && value.startsWith('openai:') && state.openaiTtsAvailable !== false) {
     const voice = value.split(':')[1];
     const ok = await speakWithOpenAI(text, voice);
-    if (ok) return;
-    // fall through to browser TTS if OpenAI failed
+    if (ok) {
+      state.openaiTtsAvailable = true;
+      return;
+    }
+    // OpenAI just failed. Remember for this session so subsequent clicks
+    // don't burn a round-trip; auto-switch the dropdown to the best system voice.
+    state.openaiTtsAvailable = false;
+    const best = pickBestVoice();
+    if (best && sel) {
+      const fallback = `system:${best.name}`;
+      sel.value = fallback;
+      state.voicePreference = fallback;
+      localStorage.setItem('voice_preference', fallback);
+    }
   }
   speakWithBrowserTTS(text);
 }
 
 async function speakWithOpenAI(text, voice) {
+  const controller = new AbortController();
+  state.ttsAbortController = controller;
   try {
     const token = await getIdToken();
     const processed = preprocessForTTS(text);
@@ -1909,19 +1966,31 @@ async function speakWithOpenAI(text, voice) {
         voice,
         tone: state.tone,
       }),
+      signal: controller.signal,
     });
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}));
       console.warn('OpenAI TTS failed, falling back to browser TTS:', err);
       return false;
     }
+    if (controller.signal.aborted) return false;
     const blob = await resp.blob();
+    if (controller.signal.aborted) return false;
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
-    audio.onended = () => URL.revokeObjectURL(url);
+    state.currentAudio = audio;
+    state.currentTtsBlobUrl = url;
+    audio.onended = () => {
+      if (state.currentTtsBlobUrl === url) {
+        URL.revokeObjectURL(url);
+        state.currentAudio = null;
+        state.currentTtsBlobUrl = null;
+      }
+    };
     await audio.play();
     return true;
   } catch (e) {
+    if (e.name === 'AbortError') return false;
     console.warn('OpenAI TTS exception, falling back:', e);
     return false;
   }
@@ -2040,7 +2109,14 @@ function stopMicAndRecording() {
 
 function playRecording() {
   if (!state.recordingUrl) return;
+  // Stop any in-flight TTS before playing recording back
+  stopCurrentAudio();
   const audio = new Audio(state.recordingUrl);
+  state.currentAudio = audio;
+  // Note: do NOT track recordingUrl in currentTtsBlobUrl — its lifecycle is owned elsewhere
+  audio.onended = () => {
+    if (state.currentAudio === audio) state.currentAudio = null;
+  };
   audio.play();
 }
 
