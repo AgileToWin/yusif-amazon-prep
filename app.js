@@ -19,14 +19,14 @@ const DAILY_MISSIONS = {
     day: 1,
     label: 'Crash course',
     title: 'Day 1 — Crash course',
-    desc: 'Get familiar with all 8 LPs. Aim for at least one rep on each. Don\'t worry about scores yet — just get reps and start hearing yourself answer.',
+    desc: 'Get familiar with all 8 Leadership Principles. Aim for at least one rep on each. Don\'t worry about scores yet — just get reps and start hearing yourself answer.',
     targetTrack: 'r1',
   },
   '2026-05-30': {
     day: 2,
     label: 'Anchor stories',
     title: 'Day 2 — Build your anchor stories',
-    desc: 'For each LP, build a story you could speak in your sleep. Target: Warm tier or above on 5 LPs. Use the 💛 humanity chip on every story.',
+    desc: 'For each Leadership Principle, build a story you could speak in your sleep. Target: Warm tier or above on 5 LPs. Use the 💛 humanity chip on every story.',
     targetTrack: 'r1',
   },
   '2026-05-31': {
@@ -40,7 +40,7 @@ const DAILY_MISSIONS = {
     day: 4,
     label: 'Probing reps',
     title: 'Day 4 — Probing reps',
-    desc: 'Round 2 + the LPs you scored lowest on yesterday. Trim every answer to under 90 seconds. Use ✂️ on anything over.',
+    desc: 'Round 2 + the Leadership Principles you scored lowest on yesterday. Trim every answer to under 90 seconds. Use ✂️ on anything over.',
     targetTrack: 'r2',
   },
   '2026-06-02': {
@@ -114,7 +114,7 @@ const RUBRIC = [
   { id: 'star',    name: 'STAR Structure',      hint: 'Clear S/T/A/R, no rambling' },
   { id: 'quant',   name: 'Quantification',      hint: 'Numbers, %, $, time, scale' },
   { id: 'probe',   name: 'Probing Resilience',  hint: 'Survives 3 follow-ups' },
-  { id: 'lp',      name: 'LP Alignment',        hint: 'Demonstrates the LP, not adjacent' },
+  { id: 'lp',      name: 'LP Alignment',        hint: 'Demonstrates the Leadership Principle, not an adjacent virtue' },
   { id: 'warmth',  name: 'Warmth & Composure',  hint: 'Would they want to work with you?' },
 ];
 
@@ -583,7 +583,7 @@ function toggleConfidenceBreakdown() {
   if (isHidden) {
     const b = computeConfidence();
     panel.innerHTML = `
-      <div class="breakdown-row"><span class="name">LP coverage (25%)</span><span class="val">${b.coverage}/100</span></div>
+      <div class="breakdown-row"><span class="name">Leadership Principle coverage (25%)</span><span class="val">${b.coverage}/100</span></div>
       <div class="breakdown-row"><span class="name">Average rubric (40%)</span><span class="val">${b.average}/100</span></div>
       <div class="breakdown-row"><span class="name">Improvement (15%)</span><span class="val">${b.improvement}/100</span></div>
       <div class="breakdown-row"><span class="name">Warmth & humanity (20%)</span><span class="val">${b.warmth}/100</span></div>
