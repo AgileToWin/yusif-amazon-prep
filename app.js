@@ -1873,9 +1873,22 @@ function populateVoiceDropdown() {
     select.appendChild(opt);
   });
 
-  // Default selection
-  const defaultValue = best ? `system:${best.name}` : (enVoices[0] ? `system:${enVoices[0].name}` : 'openai:echo');
-  if (previous && [...select.options].some(o => o.value === previous)) {
+  // Default selection priority:
+  //   1. User's persisted preference (if it still exists in the dropdown)
+  //   2. Current in-memory selection (handles re-renders mid-session)
+  //   3. OpenAI Echo — the preferred default (cloud, natural)
+  //   4. Best system voice — only if OpenAI was already verified broken this session
+  let defaultValue;
+  if (state.openaiTtsAvailable === false) {
+    defaultValue = best ? `system:${best.name}` : (enVoices[0] ? `system:${enVoices[0].name}` : 'openai:echo');
+  } else {
+    defaultValue = 'openai:echo';
+  }
+
+  const persisted = state.voicePreference;
+  if (persisted && [...select.options].some(o => o.value === persisted)) {
+    select.value = persisted;
+  } else if (previous && [...select.options].some(o => o.value === previous)) {
     select.value = previous;
   } else {
     select.value = defaultValue;
