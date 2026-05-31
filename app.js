@@ -361,6 +361,8 @@ function bindEvents() {
       if (/trim|under 90|cut/i.test(promptText)) state.pendingTrimType = 'trim';
       else if (/punchier|sharper verbs|tighter sentences/i.test(promptText)) state.pendingTrimType = 'punchier';
       else state.pendingTrimType = null;
+      // Remember the chip type so the per-message save button can tag the Story Bank entry
+      state.lastChipRewriteType = detectChipRewriteType(promptText);
       document.getElementById('chat-input').value = promptText;
       sendChatMessage();
     });
@@ -1287,7 +1289,11 @@ async function sendChatMessage() {
       state.pendingTrimType = null;
     } else {
       coachEl.innerHTML = renderMarkdown(parsed.prose);
+      // Save-this-version button for non-trim rewrites (humanity, stronger, etc.)
+      const rewriteType = state.lastChipRewriteType || 'rewrite';
+      appendSaveButtonToCoachReply(coachEl, parsed.prose, rewriteType);
     }
+    state.lastChipRewriteType = null;
   } catch (e) {
     console.error('chat request failed', e);
     coachEl.innerHTML = `<em>Couldn't reach the coach: ${e.message}</em>`;
@@ -1355,7 +1361,18 @@ function renderTrimTapeInElement(el, trimType, trimmedProse) {
       </div>
     </div>
     ${deltaSec > 0 ? `<div class="tape-delta">${origStats.timeStr} → ${newStats.timeStr} · saved ${deltaStr}</div>` : ''}
+    <div class="msg-save-container">
+      <button class="msg-save-btn trim-save-btn" type="button">💾 Save ${trimType === 'punchier' ? 'punchier' : 'trimmed'} version to Story Bank</button>
+    </div>
   `;
+  const saveBtn = el.querySelector('.trim-save-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+      saveCustomVersion(rewritten, trimType === 'punchier' ? 'punchier' : 'trim');
+      saveBtn.innerHTML = '✓ Saved';
+      saveBtn.disabled = true;
+    });
+  }
 }
 
 // ============= BULLETPROOF ANSWER (the closing synthesis) =============
@@ -1388,16 +1405,16 @@ async function composeBulletproofAnswer() {
 - One explicit LP bridge sentence at the end
 - One warmth moment (a feeling, a reaction, a quote)`;
 
-  const synthPrompt = `**SYNTHESIS REQUEST.** Take everything we've worked through in this conversation — my original answer, your grading, and every rewrite or improvement you've given me — and compose ONE final BULLETPROOF version I can speak in the room.
+  const synthPrompt = `**SYNTHESIS REQUEST.** Take everything we've worked through in this conversation — my original answer, your grading, and every rewrite or improvement you've given me — and compose ONE final version I can speak in the room.
 
 It must:
-- Sound like ME. Not corporate polish, not AI-flavoured. My actual voice.
-- ${lengthHint}. Hard ceiling. Cut anything that doesn't earn its space.
+- **Sound like ME.** Conversational. Real sentences with natural flow. No corporate polish. No condensed-to-bullets feel. Not AI-flavoured. If any sentence sounds robotic when you re-read it, rewrite that sentence in plainer voice.
+- **Target ${lengthHint}, but going up to 20% over is OK** if cutting would strip a specific detail, a named person, a customer reaction, or a moment of texture that makes the story land. **Substance beats length** every time. Better a 110-second answer with a real moment than an 80-second answer with the moment removed.
 - Open with the strongest sentence — usually the result, the customer outcome, or the headline of the story.
 - Hit STAR cleanly WITHOUT naming the parts out loud.
-- Include:
+- Try to include where they earn their place (don't force any if they'd feel pasted on):
 ${checklist}
-- Land naturally — feel lived-in, not rehearsed.
+- **Land naturally — feel lived-in, not rehearsed.** Use the way I actually talk based on what I've said in this conversation.
 
 Output EXACTLY this format (use these literal labels so my client can parse):
 
@@ -1528,15 +1545,12 @@ function saveBulletproofAsTake(answerText, rationale) {
 }
 
 // ============= SAVE THE TAKE =============
+// Always show the save button after grading. The candidate decides what's
+// worth keeping — we don't gate by an arbitrary score threshold.
 function maybeShowSaveTakeButton(scores) {
   const btn = document.getElementById('save-take-btn');
-  if (!btn || !scores) return;
-  const vals = Object.values(scores).filter(v => typeof v === 'number');
-  if (vals.length === 0) return;
-  const avg = vals.reduce((s, v) => s + v, 0) / vals.length;
-  if (avg >= 4.0) {
-    btn.hidden = false;
-  }
+  if (!btn) return;
+  btn.hidden = false;
 }
 
 function saveCurrentTake() {
@@ -1555,15 +1569,70 @@ function saveCurrentTake() {
     answer: document.getElementById('answer-text').value,
     scores: state.lastScores || null,
     coachReply,
+    rewriteType: 'original',
   };
   state.savedTakes.push(take);
   localStorage.setItem('saved_takes', JSON.stringify(state.savedTakes));
   const btn = document.getElementById('save-take-btn');
   if (btn) {
     btn.classList.add('saved');
-    btn.textContent = '✓ Saved to Story Bank';
+    btn.textContent = '✓ Original answer saved to Story Bank';
     btn.disabled = true;
   }
+}
+
+// Save a coach-modified version (trim / punchier / humanity / stronger / etc.)
+function saveCustomVersion(text, rewriteType) {
+  const list = questionsForRound(state.currentRound);
+  const q = list[state.currentIdx];
+  if (!q || !text) return;
+  const take = {
+    timestamp: new Date().toISOString(),
+    questionId: q.id,
+    questionText: q.text,
+    round: state.currentRound,
+    lp: q.lp || null,
+    topic: q.topic || null,
+    component: componentForQuestion(q),
+    answer: text,
+    scores: state.lastScores || null,
+    coachReply: '',
+    rewriteType: rewriteType || 'rewrite',
+  };
+  state.savedTakes.push(take);
+  localStorage.setItem('saved_takes', JSON.stringify(state.savedTakes));
+}
+
+// Append a "Save this version" button to a coach chat message element
+function appendSaveButtonToCoachReply(parentEl, text, rewriteType) {
+  if (!parentEl || !text) return;
+  const container = document.createElement('div');
+  container.className = 'msg-save-container';
+  const btn = document.createElement('button');
+  btn.className = 'msg-save-btn';
+  btn.type = 'button';
+  btn.innerHTML = '💾 Save this version to Story Bank';
+  btn.addEventListener('click', () => {
+    saveCustomVersion(text, rewriteType);
+    btn.innerHTML = '✓ Saved';
+    btn.disabled = true;
+  });
+  container.appendChild(btn);
+  parentEl.appendChild(container);
+}
+
+// Map a chip prompt's text to a short rewriteType label for the Story Bank
+function detectChipRewriteType(promptText) {
+  if (!promptText) return 'rewrite';
+  const p = promptText.toLowerCase();
+  if (/trim|under 90|cut it down|cut my answer/i.test(p)) return 'trim';
+  if (/punchier|sharper verbs|tighter sentences/i.test(p)) return 'punchier';
+  if (/humanity|teammate|customer name|warmth/i.test(p)) return 'humanity';
+  if (/stronger version|almost verbatim|speak verbatim/i.test(p)) return 'stronger';
+  if (/bar raiser|probing|break this answer/i.test(p)) return 'bar-raiser-probes';
+  if (/quantifiable|add a number/i.test(p)) return 'quantified';
+  if (/sharper result|result section|more impact/i.test(p)) return 'sharper-result';
+  return 'rewrite';
 }
 
 // ============= PROGRESS SCREEN =============
@@ -1708,8 +1777,13 @@ function renderStoryBank() {
         : '';
       const ts = new Date(t.timestamp);
       const dateStr = ts.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const rewriteLabel = t.bulletproof ? 'bulletproof'
+        : (t.rewriteType && t.rewriteType !== 'original' ? t.rewriteType : null);
+      const rewriteBadge = rewriteLabel
+        ? `<span class="rewrite-badge ${escapeHtml(rewriteLabel)}">${escapeHtml(rewriteLabel)}</span>`
+        : '<span class="rewrite-badge original">original</span>';
       card.innerHTML = `
-        <div class="bank-card-q">${escapeHtml(t.questionText)}</div>
+        <div class="bank-card-q">${rewriteBadge} ${escapeHtml(t.questionText)}</div>
         <div class="bank-card-a">${escapeHtml(t.answer || '(no answer recorded)')}</div>
         <div class="bank-card-meta">
           <div class="bank-card-scores">${scoresHtml}</div>

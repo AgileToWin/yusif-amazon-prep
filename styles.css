@@ -646,6 +646,46 @@ button {
 .chat-msg.coach strong { color: var(--accent); }
 .chat-msg.coach em { color: var(--text-soft); }
 
+.msg-save-container {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+.msg-save-btn {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 150ms, border-color 150ms;
+}
+.msg-save-btn:hover { background: var(--accent-bg); border-color: var(--accent); }
+.msg-save-btn:disabled { opacity: 0.65; cursor: default; background: var(--bg-soft); }
+.rewrite-badge {
+  display: inline-block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  margin-right: 6px;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+.rewrite-badge.original   { background: #e0f2fe; color: #0369a1; }
+.rewrite-badge.trim       { background: #ecfdf5; color: #047857; }
+.rewrite-badge.punchier   { background: #fef3c7; color: #92400e; }
+.rewrite-badge.humanity   { background: #fce7f3; color: #9d174d; }
+.rewrite-badge.stronger   { background: #fff7ed; color: #c2410c; }
+.rewrite-badge.bulletproof { background: linear-gradient(135deg, var(--accent), #fb923c); color: white; }
+
 .chat-prompts {
   display: flex; gap: 8px; flex-wrap: wrap;
   margin-bottom: 14px;
